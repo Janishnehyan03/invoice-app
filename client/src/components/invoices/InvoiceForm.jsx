@@ -46,7 +46,7 @@ export function InvoiceForm({
       name: "Aneesh kandoth kandiyil",
       address: "CHERAPURAM - KOZHIKODE, KERALA - 673507",
       mobile: "9745834089",
-      gstin: "32AWHPN0956D1ZS",
+      gstin: "32CXSPA4511R1Z6", // Updated based on image
     },
     {
       name: "Asees Nelliyullathil",
@@ -147,10 +147,9 @@ export function InvoiceForm({
       ]);
     }
     // Only hydrate when invoiceToEdit or isEditMode changes, not availableItems!
-    // availableItems is only used for filling in details IF available, but not for complete reset
   }, [invoiceToEdit, isEditMode]);
 
-  // If availableItems arrive after invoice is hydrated, fill in new details for existing items (for display), but do not reset array
+  // If availableItems arrive after invoice is hydrated, fill in new details for existing items
   useEffect(() => {
     if (availableItems.length === 0) return;
     setInvoiceItems((prev) =>
@@ -178,6 +177,7 @@ export function InvoiceForm({
     });
   }, [company]);
 
+  // --- CALCULATIONS ---
   const { subtotal, totalSgst, totalCgst, grandTotal } = useMemo(() => {
     return invoiceItems.reduce(
       (acc, item) => {
@@ -256,11 +256,6 @@ export function InvoiceForm({
     setInvoiceItems((prev) => prev.filter((_, i) => i !== indexToRemove));
   };
 
-  // Log invoiceItems after update for debugging
-  useEffect(() => {
-    console.log("Updated invoiceItems:", invoiceItems);
-  }, [invoiceItems]);
-
   // --- FORM SUBMISSION ---
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -313,7 +308,7 @@ export function InvoiceForm({
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 mx-auto border border-gray-100">
       <form onSubmit={handleSubmit} className="space-y-10">
-        {/* --- Header Section --- */}
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b pb-6 border-gray-100">
           <div>
             <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -336,7 +331,7 @@ export function InvoiceForm({
           />
         </div>
 
-        {/* --- Client Info Section --- */}
+        {/* Client Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
             id="from"
@@ -372,7 +367,7 @@ export function InvoiceForm({
           />
           <Input
             id="workName"
-            label="Project"
+            label="Work Name"
             type="text"
             required
             value={workName}
@@ -398,41 +393,45 @@ export function InvoiceForm({
           </div>
 
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50/50">
-            {/* Table Headers */}
+            {/* --- CHANGE START: Updated table headers to match invoice image --- */}
             <div className="hidden sm:grid grid-cols-12 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0 z-10">
-              <div className="px-4 py-3 col-span-4">Item</div>
-              <div className="px-4 py-3 col-span-2">Qty</div>
-              <div className="px-2 py-3 text-right col-span-1">Price</div>
+              <div className="px-4 py-3 col-span-3">Item</div>
+              <div className="px-2 py-3 text-center col-span-1">Qty</div>
+              <div className="px-2 py-3 text-right col-span-2">Rate (₹)</div>
+              <div className="px-2 py-3 text-right col-span-2">Total (₹)</div>
               <div className="px-2 py-3 text-right col-span-1">SGST (₹)</div>
               <div className="px-2 py-3 text-right col-span-1">CGST (₹)</div>
-              <div className="px-2 py-3 text-right col-span-2">Amount</div>
-              <div className="px-2 py-3"></div>
+              <div className="px-2 py-3 text-right col-span-1">Total Amt</div>
+              <div className="px-2 py-3 col-span-1"></div>
             </div>
+            {/* --- CHANGE END --- */}
 
-            {/* --- CHANGE START: Combined item rendering loop --- */}
             <div className="divide-y divide-gray-200">
               {invoiceItems.map((it, index) => {
+                // --- CHANGE START: More explicit calculations to match image columns ---
                 const itemSubtotal = (it.price || 0) * (it.qty || 0);
-                const itemTotal =
-                  itemSubtotal *
-                  (1 + (it.sgst || 0) / 100 + (it.cgst || 0) / 100);
+                const itemSgstValue = itemSubtotal * ((it.sgst || 0) / 100);
+                const itemCgstValue = itemSubtotal * ((it.cgst || 0) / 100);
+                const itemTotal = itemSubtotal + itemSgstValue + itemCgstValue;
+                // --- CHANGE END ---
 
-                // Determine styling based on whether the item was pre-loaded in edit mode
                 const isExistingItem = isEditMode && it.uploaded;
 
                 return (
                   <div
                     key={index}
-                    className={`grid grid-cols-12 sm:grid-cols-12 items-center gap-4 px-4 py-3 text-sm border-b transition ${
+                    // --- CHANGE START: Grid layout updated for new columns ---
+                    className={`grid grid-cols-12 items-center gap-x-4 gap-y-2 px-4 py-3 text-sm border-b transition ${
                       isExistingItem
                         ? "bg-green-50/50"
                         : index % 2 === 0
                         ? "bg-white"
                         : "bg-gray-50"
                     } hover:bg-gray-100`}
+                    // --- CHANGE END ---
                   >
                     {/* Item Select */}
-                    <div className="col-span-12 sm:col-span-4 flex items-center gap-2">
+                    <div className="col-span-12 sm:col-span-3 flex items-center gap-2">
                       <select
                         id={`item-name-${index}`}
                         value={it.itemId || ""}
@@ -463,8 +462,9 @@ export function InvoiceForm({
                         </span>
                       )}
                     </div>
+
                     {/* Quantity */}
-                    <div className="col-span-6 sm:col-span-2">
+                    <div className="col-span-4 sm:col-span-1">
                       <input
                         id={`item-qty-${index}`}
                         type="number"
@@ -473,25 +473,35 @@ export function InvoiceForm({
                         required
                         value={it.qty}
                         onChange={(e) => updateItemQty(index, e.target.value)}
-                        className="w-20 rounded-md border border-gray-300 bg-gray-50 px-2 py-1 text-center text-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+                        className="w-full rounded-md border border-gray-300 bg-gray-50 px-2 py-1 text-center text-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
                       />
                     </div>
-                    {/* Price */}
-                    <div className="col-span-6 sm:col-span-1 text-right text-gray-700 font-medium">
-                      ₹{it.price.toFixed(2)}
+
+                    {/* Rate */}
+                    <div className="col-span-8 sm:col-span-2 text-right text-gray-700 font-medium">
+                      {formatCurrency(it.price)}
                     </div>
+
+                    {/* --- NEW: Total (Subtotal) Column --- */}
+                    <div className="col-span-4 sm:col-span-2 text-right text-gray-800 font-medium">
+                      {formatCurrency(itemSubtotal)}
+                    </div>
+
                     {/* SGST (₹ value) */}
                     <div className="col-span-4 sm:col-span-1 text-right text-gray-600">
-                      {formatCurrency(itemSubtotal * ((it.sgst || 0) / 100))}
+                      {formatCurrency(itemSgstValue)}
                     </div>
+
                     {/* CGST (₹ value) */}
                     <div className="col-span-4 sm:col-span-1 text-right text-gray-600">
-                      {formatCurrency(itemSubtotal * ((it.cgst || 0) / 100))}
+                      {formatCurrency(itemCgstValue)}
                     </div>
+
                     {/* Total Amount */}
-                    <div className="col-span-4 sm:col-span-2 text-right font-semibold text-indigo-700">
+                    <div className="col-span-4 sm:col-span-1 text-right font-semibold text-indigo-700">
                       {formatCurrency(itemTotal)}
                     </div>
+
                     {/* Delete button */}
                     <div className="col-span-12 sm:col-span-1 flex justify-center sm:justify-end">
                       <button
@@ -507,11 +517,10 @@ export function InvoiceForm({
                 );
               })}
             </div>
-            {/* --- CHANGE END --- */}
           </div>
         </section>
 
-        {/* --- Totals & Notes Section --- */}
+        {/* Totals & Notes Section */}
         <div className="flex flex-col md:flex-row md:items-start gap-8">
           <div className="flex-1">
             <Textarea
@@ -546,7 +555,7 @@ export function InvoiceForm({
           </div>
         </div>
 
-        {/* --- Action Buttons --- */}
+        {/* Action Buttons */}
         <div className="flex justify-end gap-4 pt-8 border-t border-gray-100">
           <Button
             type="button"

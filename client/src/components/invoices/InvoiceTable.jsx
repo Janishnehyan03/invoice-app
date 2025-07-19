@@ -100,7 +100,7 @@ export const InvoiceTable = ({ invoices, onView, onEdit, onDelete }) => {
               scope="col"
               className="px-3 py-3.5 text-left text-xs font-extrabold text-slate-700 tracking-widest uppercase"
             >
-              Project / Date
+              Work Name / Date
             </th>
             <th
               scope="col"

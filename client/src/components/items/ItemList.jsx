@@ -19,12 +19,7 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
           <span>|</span>
           <span>CGST: {item.cgst}%</span>
         </div>
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-lg font-semibold text-indigo-600">
-            ₹{totalPrice.toFixed(2)}
-          </p>
-          <p className="text-xs text-gray-400">Total Price (incl. GST)</p>
-        </div>
+        
       </div>
 
       {/* Actions */}

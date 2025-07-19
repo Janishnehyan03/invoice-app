@@ -43,7 +43,7 @@ export const SkeletonLoader = () => (
               scope="col"
               className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
             >
-              Project / Date
+              Work Name / Date
             </th>
             <th
               scope="col"

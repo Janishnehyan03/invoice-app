@@ -12,9 +12,7 @@ export const InvoiceListHeader = ({
     <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-6">
       <div>
         <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-gray-900">
-          <span className=" drop-shadow">
-            Invoices
-          </span>
+          <span className=" drop-shadow">Invoices</span>
         </h1>
         <p className="mt-2 text-sm text-gray-500 max-w-xl">
           Review, search, and manage all invoices in your account.
@@ -43,7 +41,7 @@ export const InvoiceListHeader = ({
         <Input
           id="search"
           type="search"
-          placeholder="Search invoices by #, client, or project…"
+          placeholder="Search invoices by #, client, or work name"
           value={searchTerm}
           onChange={onSearchChange}
           className="pl-10 py-2 text-base rounded-lg bg-white border border-blue-100 focus:border-indigo-400 focus:ring-indigo-100"
