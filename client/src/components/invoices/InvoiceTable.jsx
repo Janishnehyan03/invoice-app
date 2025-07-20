@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 /**
- * Modern, clean, and responsive table row for invoice list.
+ * Clean, modern, and responsive table row for invoice list, matching your variable names.
  */
 const TableRow = ({ invoice, onView, onEdit, onDelete }) => (
   <tr

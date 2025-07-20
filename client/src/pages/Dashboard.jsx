@@ -1,11 +1,10 @@
+import { Box, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, FileText } from "lucide-react";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
     invoices: 0,
-    clients: 0,
     items: 0,
   });
 
@@ -13,7 +12,6 @@ export default function Dashboard() {
     // Mock API data - replace with real API calls
     setStats({
       invoices: 12,
-      clients: 8,
       items: 24,
     });
   }, []);
@@ -23,11 +21,11 @@ export default function Dashboard() {
       title: "Invoices",
       value: stats.invoices,
       icon: (
-        <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-600 shadow text-white group-hover:scale-110 transition-transform">
+        <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-600 shadow-lg text-white group-hover:scale-105 transition-transform">
           <FileText size={28} />
         </div>
       ),
-      accent: "border-blue-100 hover:border-blue-400 focus:ring-blue-300",
+      accent: "from-blue-50 to-blue-100",
       to: "/invoices",
       description: "View and manage all your invoices",
     },
@@ -35,11 +33,11 @@ export default function Dashboard() {
       title: "Items",
       value: stats.items,
       icon: (
-        <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-tr from-purple-400 to-purple-600 shadow text-white group-hover:scale-110 transition-transform">
+        <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-tr from-purple-400 to-purple-600 shadow-lg text-white group-hover:scale-105 transition-transform">
           <Box size={28} />
         </div>
       ),
-      accent: "border-purple-100 hover:border-purple-400 focus:ring-purple-300",
+      accent: "from-purple-50 to-purple-100",
       to: "/items",
       description: "Manage inventory and billable items",
     },
@@ -62,25 +60,25 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <section
         aria-label="Quick stats"
-        className="grid grid-cols-1 sm:grid-cols-2 gap-8 px-8"
+        className="grid grid-cols-1 sm:grid-cols-2  gap-8 px-8"
       >
         {cards.map((card) => (
           <Link
             key={card.title}
             to={card.to}
-            tabIndex={0}
-            className="outline-none group"
+            className="group outline-none"
             aria-label={`Go to ${card.title}`}
           >
             <div
-              className={`bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.03] transition-transform duration-200 cursor-pointer p-7 flex items-center gap-7 border ${card.accent} focus:ring-2`}
+              className={`bg-gradient-to-tr ${card.accent} rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.03] transition-transform duration-200 cursor-pointer p-7 flex flex-col items-start gap-5`}
             >
               {card.icon}
               <div className="flex flex-col">
-                <span className="text-4xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <span className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
                   {card.title}
                 </span>
-                <span className="mt-2 text-sm text-gray-400">
+
+                <span className="mt-3 text-sm text-gray-400">
                   {card.description}
                 </span>
               </div>
@@ -89,7 +87,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      {/* Footer micro-copy */}
+      {/* Footer */}
       <footer className="mt-24 flex justify-center text-xs text-gray-400">
         &copy; {new Date().getFullYear()} Your Company. All rights reserved.
       </footer>

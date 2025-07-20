@@ -72,7 +72,6 @@ const formatCurrency = (amount) => {
   })}`;
 };
 
-// --- CHANGE: Renamed totalAmount to subtotal for clarity ---
 function calculateTotals(items = []) {
   const totals = items.reduce(
     (acc, row) => {
@@ -105,7 +104,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
   const formatDate = (dateString) =>
     dateString ? new Date(dateString).toLocaleDateString("en-GB") : "N/A";
 
-  // --- CHANGE: Renamed totalAmount to subtotal for clarity ---
   const { subtotal, totalSGST, totalCGST, grandTotal } = calculateTotals(
     invoice.items
   );
@@ -130,13 +128,28 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
     const printContents = printRef.current.innerHTML;
     const printTableStyle = `
       @media print {
-        html, body { font-size: 11px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        html, body { font-size: 11px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 100%; }
+        #invoice-items-section { 
+          position: relative; 
+          min-height: 200px;
+          margin-top: 12vh !important;
+          margin-bottom: 0;
+        }
+        #footer-section {
+          position: fixed;
+          left: 0; right: 0; bottom: 0;
+          width: 100vw;
+          padding-bottom: 24px;
+          background: white !important;
+          z-index: 999;
+        }
         table, th, td { font-size: 11px !important; border: 1px solid #e5e7eb !important; border-collapse: collapse !important; }
         th, td { padding: 4px 6px !important; }
         thead tr { background: #f1f5f9 !important; }
         tfoot tr { background: #f1f5f9 !important; font-weight: bold; }
         tbody tr:nth-child(even) { background: #f9fafb !important; }
         th { font-weight: 700 !important; color: #334155 !important; }
+        .no-print-bg { background: white !important; }
       }
     `;
     const fullPrintStyles = `<style>${stylesheets}\n${printTableStyle}</style>`;
@@ -169,21 +182,31 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
       }
       className="max-w-5xl"
     >
-      <div ref={printRef} className="space-y-8 text-sm p-4 print:p-0">
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-lg p-6 border border-slate-100 print:bg-white print:shadow-none print:border-b print:rounded-none">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-indigo-700 tracking-tight">
-              {invoice.from?.name || "Company Name"}
-            </span>
-            <span className="text-gray-600 text-sm mt-1">
-              {invoice.from?.fromAddress || "Company Address"}
-            </span>
-            <span className="text-gray-500 text-xs mt-1">
-              {/* --- CHANGE: Updated GSTIN to match image --- */}
-              GSTIN: {invoice.from?.fromGSTIN || "32CXSPA4511R1Z6"}
-            </span>
+      <div ref={printRef} className="space-y-8 text-sm p-4 print:p-0 print:h-[100vh] h-full relative">
+        {/* --- INVOICE HEADER --- */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-lg p-6 border border-slate-100 print:bg-white print:shadow-none print:border-b print:rounded-none no-print-bg">
+          <div className="flex items-start gap-4">
+            {invoice.from?.name === "Shelter Architects and Builders" && (
+              <img
+                src="/SHELTER-LOGO.png"
+                alt="Company Logo"
+                className="h-14 w-auto object-contain flex-shrink-0 mt-1"
+              />
+            )}
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-indigo-700 tracking-tight">
+                {invoice.from?.name || "Company Name"}
+              </span>
+              <span className="text-gray-600 text-sm mt-1">
+                {invoice.from?.fromAddress || "Company Address"}
+              </span>
+              <span className="text-gray-500 text-xs mt-1">
+                GSTIN: {invoice.from?.fromGSTIN || "32CXSPA4511R1Z6"}
+              </span>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm flex-shrink-0">
             <span className="font-semibold text-gray-500">Billed To:</span>
             <span className="text-gray-900 font-medium">{invoice.to}</span>
             <span className="font-semibold text-gray-500">Work:</span>
@@ -197,9 +220,16 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl shadow ring-1 ring-slate-100 bg-white print:shadow-none print:ring-0">
+        {/* --- INVOICE ITEMS TABLE (slightly top of center) --- */}
+        <div
+          id="invoice-items-section"
+          className="overflow-x-auto rounded-xl shadow ring-1 ring-slate-100 bg-white print:shadow-none print:ring-0 print:relative print:mt-[12vh]"
+          style={{
+            marginTop: "6vh",
+            marginBottom: 0,
+          }}
+        >
           <table className="w-full text-left table-auto">
-            {/* --- CHANGE: Table headers updated to match invoice image --- */}
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 print:bg-gray-100">
               <tr>
                 <th className="px-4 py-3 font-semibold text-center">Sl No</th>
@@ -215,7 +245,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {/* --- CHANGE: Table rows updated with new columns and calculations --- */}
               {invoice.items.map((row, index) => {
                 const qty = row.qty || 0;
                 const rate = row.item?.price || 0;
@@ -250,7 +279,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                 );
               })}
             </tbody>
-            {/* --- CHANGE: Footer simplified to a single totals row --- */}
             <tfoot className="bg-slate-50">
               <tr className="font-bold text-slate-800">
                 <td className="px-4 py-3 text-right" colSpan={4}>
@@ -273,22 +301,36 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
           </table>
         </div>
 
-        <div className="text-base font-semibold text-blue-700 bg-blue-50 rounded-lg px-4 py-2 shadow-sm w-fit print:shadow-none print:bg-blue-50">
-          Amount in words: {amountInWords(grandTotal)}
-        </div>
-
-        <div className="flex justify-between items-start pt-6 border-t border-slate-100 gap-8">
-          <div>
-            <h3 className="text-gray-500 font-semibold mb-2">Remarks</h3>
-            <p className="text-gray-700 bg-slate-50 rounded px-3 py-2 min-h-[32px] print:bg-gray-50">
-              {invoice.notes || "No notes provided."}
-            </p>
+        {/* --- FOOTER at the absolute bottom of PDF --- */}
+        <div
+          id="footer-section"
+          className="pt-8 mt-4 border-t border-slate-200 space-y-6 print:pt-0 print:mt-0 print:border-t print:bg-white print:fixed print:left-0 print:right-0 print:bottom-0 print:w-full"
+          style={{
+            position: "static",
+          }}
+        >
+          <div className="text-base font-semibold text-indigo-800 bg-indigo-50 rounded-lg px-4 py-3 shadow-sm print:shadow-none print:bg-indigo-50 no-print-bg">
+            <span className="font-medium text-slate-600">
+              Amount in words:{" "}
+            </span>
+            {amountInWords(grandTotal)}
           </div>
-          <div className="min-w-[220px] text-center mt-12">
-            <div className="text-slate-500 font-medium">
-              Authorised Signature
+          <div className="flex justify-between items-end gap-8">
+            <div className="flex-grow">
+              <h3 className="text-gray-500 font-semibold mb-2">Remarks</h3>
+              <p className="text-gray-700 bg-slate-50 rounded-lg p-3 min-h-[80px] border border-slate-200 print:bg-gray-50 no-print-bg">
+                {invoice.notes || "No notes provided."}
+              </p>
             </div>
-            <div className="border-b-2 border-slate-300 w-48 mx-auto mt-16"></div>
+            <div className="min-w-[240px] text-center flex-shrink-0">
+              <div className="h-20" /> {/* Spacer for signature */}
+              <div className="border-t border-slate-400 pt-2">
+                <p className="font-semibold text-slate-800">
+                  For {invoice.from?.name || "Shelter Architects and Builders"}
+                </p>
+                <p className="text-sm text-slate-500">Authorised Signatory</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
