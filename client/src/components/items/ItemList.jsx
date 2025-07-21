@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 
 const ItemCard = ({ item, onEdit, onDelete }) => {
-  const totalPrice = item.price * (1 + (item.sgst + item.cgst) / 100);
+  const totalPrice =
+    item.price -
+    (item.price * item.sgst) / 100 -
+    (item.price * item.cgst) / 100;
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 p-6 flex flex-col justify-between border border-gray-100">
@@ -19,7 +22,11 @@ const ItemCard = ({ item, onEdit, onDelete }) => {
           <span>|</span>
           <span>CGST: {item.cgst}%</span>
         </div>
-        
+
+        <p className="mt-4 text-lg font-bold text-gray-900">
+          Total Price:{" "}
+          <span className="text-indigo-600">₹{totalPrice.toFixed(2)}</span>
+        </p>
       </div>
 
       {/* Actions */}

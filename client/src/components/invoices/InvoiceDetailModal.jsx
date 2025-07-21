@@ -182,7 +182,10 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
       }
       className="max-w-5xl"
     >
-      <div ref={printRef} className="space-y-8 text-sm p-4 print:p-0 print:h-[100vh] h-full relative">
+      <div
+        ref={printRef}
+        className="space-y-8 text-sm p-4 print:p-0 print:h-[100vh] h-full relative"
+      >
         {/* --- INVOICE HEADER --- */}
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-lg p-6 border border-slate-100 print:bg-white print:shadow-none print:border-b print:rounded-none no-print-bg">
           <div className="flex items-start gap-4">
@@ -247,9 +250,13 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
             <tbody className="divide-y divide-slate-100">
               {invoice.items.map((row, index) => {
                 const qty = row.qty || 0;
-                const rate = row.item?.price || 0;
+                // Subtract SGST and CGST from the price to get base rate
                 const sgstRate = row.sgst || 0;
                 const cgstRate = row.cgst || 0;
+                const rate = row.item?.price
+                  ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
+                  : 0;
+
                 const lineSubtotal = qty * rate;
                 const lineSGST = (lineSubtotal * sgstRate) / 100;
                 const lineCGST = (lineSubtotal * cgstRate) / 100;
