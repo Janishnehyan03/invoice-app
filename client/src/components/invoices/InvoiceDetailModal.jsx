@@ -126,9 +126,10 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
       .join("\n");
 
     const printContents = printRef.current.innerHTML;
+    // --- MODIFIED SECTION ---
     const printTableStyle = `
       @media print {
-        html, body { font-size: 11px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 100%; }
+        html, body { font-size: 13px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 100%; }
         #invoice-items-section { 
           position: relative; 
           min-height: 200px;
@@ -143,8 +144,8 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
           background: white !important;
           z-index: 999;
         }
-        table, th, td { font-size: 11px !important; border: 1px solid #e5e7eb !important; border-collapse: collapse !important; }
-        th, td { padding: 4px 6px !important; }
+        table, th, td { font-size: 13px !important; border: 1px solid #e5e7eb !important; border-collapse: collapse !important; }
+        th, td { padding: 5px 8px !important; }
         thead tr { background: #f1f5f9 !important; }
         tfoot tr { background: #f1f5f9 !important; font-weight: bold; }
         tbody tr:nth-child(even) { background: #f9fafb !important; }
@@ -152,6 +153,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         .no-print-bg { background: white !important; }
       }
     `;
+    // --- END MODIFIED SECTION ---
     const fullPrintStyles = `<style>${stylesheets}\n${printTableStyle}</style>`;
     const printWindow = window.open("", "_blank", "width=900,height=700");
     printWindow.document.write(`
