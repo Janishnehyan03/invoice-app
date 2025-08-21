@@ -76,10 +76,12 @@ function calculateTotals(items = []) {
   const totals = items.reduce(
     (acc, row) => {
       const qty = row.qty || 0;
-      const price = row.item?.price || 0;
       const sgstRate = row.sgst || 0;
       const cgstRate = row.cgst || 0;
-      const lineSubtotal = qty * price;
+      const rate = row.item?.price
+        ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
+        : 0;
+      const lineSubtotal = qty * rate;
 
       acc.subtotal += lineSubtotal;
       acc.totalSGST += (lineSubtotal * sgstRate) / 100;
@@ -126,34 +128,56 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
       .join("\n");
 
     const printContents = printRef.current.innerHTML;
-    // --- MODIFIED SECTION ---
     const printTableStyle = `
       @media print {
-        html, body { font-size: 13px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; height: 100%; }
+        html, body { 
+          font-size: 12px !important; 
+          -webkit-print-color-adjust: exact; 
+          print-color-adjust: exact; 
+          margin: 0;
+          padding: 0;
+        }
+        .print-container {
+          height: 100vh !important;
+          display: flex !important;
+          flex-direction: column !important;
+          padding: 20px !important;
+          box-sizing: border-box !important;
+        }
+        #invoice-header { flex-shrink: 0; }
         #invoice-items-section { 
-          position: relative; 
-          min-height: 200px;
-          margin-top: 12vh !important;
-          margin-bottom: 0;
+          flex: 1;
+          min-height: 300px;
+          margin: 20px 0 !important;
         }
         #footer-section {
-          position: fixed;
-          left: 0; right: 0; bottom: 0;
-          width: 100vw;
-          padding-bottom: 24px;
-          background: white !important;
-          z-index: 999;
+          flex-shrink: 0;
+          margin-top: auto !important;
+          page-break-inside: avoid;
         }
-        table, th, td { font-size: 13px !important; border: 1px solid #e5e7eb !important; border-collapse: collapse !important; }
-        th, td { padding: 5px 8px !important; }
-        thead tr { background: #f1f5f9 !important; }
-        tfoot tr { background: #f1f5f9 !important; font-weight: bold; }
-        tbody tr:nth-child(even) { background: #f9fafb !important; }
-        th { font-weight: 700 !important; color: #334155 !important; }
+        table { 
+          width: 100% !important;
+          border-collapse: collapse !important; 
+          font-size: 11px !important;
+        }
+        th, td { 
+          border: 1px solid #e5e7eb !important;
+          padding: 8px 6px !important; 
+          text-align: left !important;
+        }
+        th { 
+          background: #f8fafc !important; 
+          font-weight: bold !important;
+          font-size: 10px !important;
+        }
+        tfoot td { 
+          background: #f1f5f9 !important; 
+          font-weight: bold !important;
+        }
         .no-print-bg { background: white !important; }
+        .print-hidden { display: none !important; }
       }
     `;
-    // --- END MODIFIED SECTION ---
     const fullPrintStyles = `<style>${stylesheets}\n${printTableStyle}</style>`;
     const printWindow = window.open("", "_blank", "width=900,height=700");
     printWindow.document.write(`
@@ -182,173 +206,212 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
           </span>
         </span>
       }
-      className="max-w-5xl"
+      className="max-w-6xl"
     >
       <div
         ref={printRef}
-        className="space-y-8 text-sm p-4 print:p-0 print:h-[100vh] h-full relative"
+        className="print-container space-y-6 text-sm p-6 print:p-0"
       >
         {/* --- INVOICE HEADER --- */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-lg p-6 border border-slate-100 print:bg-white print:shadow-none print:border-b print:rounded-none no-print-bg">
+        <div id="invoice-header" className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-xl shadow-sm p-6 border border-slate-200 print:bg-white print:shadow-none print:border print:rounded-none">
           <div className="flex items-start gap-4">
             {invoice.from?.name === "Shelter Architects and Builders" && (
               <img
                 src="/SHELTER-LOGO.png"
                 alt="Company Logo"
-                className="h-14 w-auto object-contain flex-shrink-0 mt-1"
+                className="h-16 w-auto object-contain flex-shrink-0 mt-1 print:h-12"
               />
             )}
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-indigo-700 tracking-tight">
+              <span className="text-2xl font-bold text-indigo-700 tracking-tight print:text-xl">
                 {invoice.from?.name || "Company Name"}
               </span>
-              <span className="text-gray-600 text-sm mt-1">
+              <span className="text-gray-600 text-sm mt-2 leading-relaxed max-w-sm">
                 {invoice.from?.fromAddress || "Company Address"}
               </span>
-              <span className="text-gray-500 text-xs mt-1">
+              <span className="text-gray-500 text-xs mt-2 font-medium">
                 GSTIN: {invoice.from?.fromGSTIN || "32CXSPA4511R1Z6"}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm flex-shrink-0">
-            <span className="font-semibold text-gray-500">Billed To:</span>
-            <span className="text-gray-900 font-medium">{invoice.to}</span>
-            <span className="font-semibold text-gray-500">Work:</span>
-            <span className="text-gray-900 font-medium">
-              {invoice.workName}
-            </span>
-            <span className="font-semibold text-gray-500">Issued On:</span>
-            <span className="text-gray-900 font-medium">
-              {formatDate(invoice.date)}
-            </span>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-100 min-w-[300px] print:shadow-none print:border">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <span className="font-semibold text-slate-600">Billed To:</span>
+              <span className="text-slate-900 font-medium">{invoice.to}</span>
+              <span className="font-semibold text-slate-600">Work Name :</span>
+              <span className="text-slate-900 font-medium">
+                {invoice.workName}
+              </span>
+              <span className="font-semibold text-slate-600">Invoice No:</span>
+              <span className="text-slate-900 font-medium">
+                {invoice.invoiceNumber}
+              </span>
+              <span className="font-semibold text-slate-600">Invoice Date:</span>
+              <span className="text-slate-900 font-medium">
+                {formatDate(invoice.date)}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* --- INVOICE ITEMS TABLE (slightly top of center) --- */}
+        {/* --- INVOICE ITEMS TABLE --- */}
         <div
           id="invoice-items-section"
-          className="overflow-x-auto rounded-xl shadow ring-1 ring-slate-100 bg-white print:shadow-none print:ring-0 print:relative print:mt-[12vh]"
-          style={{
-            marginTop: "6vh",
-            marginBottom: 0,
-          }}
+          className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border"
         >
-          <table className="w-full text-left table-auto">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 print:bg-gray-100">
-              <tr>
-                <th className="px-4 py-3 font-semibold text-center">Sl No</th>
-                <th className="px-4 py-3 font-semibold">Item Description</th>
-                <th className="px-4 py-3 font-semibold text-center">Qty</th>
-                <th className="px-4 py-3 font-semibold text-right">Rate</th>
-                <th className="px-4 py-3 font-semibold text-right">Total</th>
-                <th className="px-4 py-3 font-semibold text-right">SGST</th>
-                <th className="px-4 py-3 font-semibold text-right">CGST</th>
-                <th className="px-4 py-3 font-semibold text-right">
-                  Total Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {invoice.items.map((row, index) => {
-                const qty = row.qty || 0;
-                // Subtract SGST and CGST from the price to get base rate
-                const sgstRate = row.sgst || 0;
-                const cgstRate = row.cgst || 0;
-                const rate = row.item?.price
-                  ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
-                  : 0;
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-slate-50 to-slate-100 print:bg-gray-100">
+                <tr className="text-xs text-slate-700 uppercase tracking-wider">
+                  <th className="px-4 py-4 font-bold text-center w-16">Sl No</th>
+                  <th className="px-4 py-4 font-bold text-left min-w-[200px]">Item Description</th>
+                  <th className="px-4 py-4 font-bold text-center w-20">Qty</th>
+                  <th className="px-4 py-4 font-bold text-right w-28">Rate</th>
+                  <th className="px-4 py-4 font-bold text-right w-28">Subtotal</th>
+                  <th className="px-4 py-4 font-bold text-right w-24">SGST</th>
+                  <th className="px-4 py-4 font-bold text-right w-24">CGST</th>
+                  <th className="px-4 py-4 font-bold text-right w-32">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {invoice.items.map((row, index) => {
+                  const qty = row.qty || 0;
+                  const sgstRate = row.sgst || 0;
+                  const cgstRate = row.cgst || 0;
+                  const rate = row.item?.price
+                    ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
+                    : 0;
 
-                const lineSubtotal = qty * rate;
-                const lineSGST = (lineSubtotal * sgstRate) / 100;
-                const lineCGST = (lineSubtotal * cgstRate) / 100;
-                const lineTotalAmount = lineSubtotal + lineSGST + lineCGST;
+                  const lineSubtotal = qty * rate;
+                  const lineSGST = (lineSubtotal * sgstRate) / 100;
+                  const lineCGST = (lineSubtotal * cgstRate) / 100;
+                  const lineTotalAmount = lineSubtotal + lineSGST + lineCGST;
 
-                return (
-                  <tr key={index}>
-                    <td className="px-4 py-3 text-center">{index + 1}</td>
-                    <td className="px-4 py-3">{row.item?.name || "-"}</td>
-                    <td className="px-4 py-3 text-center">{qty}</td>
-                    <td className="px-4 py-3 text-right">
-                      {formatCurrency(rate)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {formatCurrency(lineSubtotal)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {formatCurrency(lineSGST)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {formatCurrency(lineCGST)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-indigo-700">
-                      {formatCurrency(lineTotalAmount)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot className="bg-slate-50">
-              <tr className="font-bold text-slate-800">
-                <td className="px-4 py-3 text-right" colSpan={4}>
-                  Total:
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {formatCurrency(subtotal)}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {formatCurrency(totalSGST)}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {formatCurrency(totalCGST)}
-                </td>
-                <td className="px-4 py-3 text-right text-indigo-700">
-                  {formatCurrency(grandTotal)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                  return (
+                    <tr key={index} className="hover:bg-slate-25 print:hover:bg-transparent">
+                      <td className="px-4 py-4 text-center font-medium text-slate-600">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-4 font-medium text-slate-900">
+                        {row.item?.name || "-"}
+                      </td>
+                      <td className="px-4 py-4 text-center font-medium text-slate-700">
+                        {qty}
+                      </td>
+                      <td className="px-4 py-4 text-right text-slate-700">
+                        {formatCurrency(rate)}
+                      </td>
+                      <td className="px-4 py-4 text-right font-medium text-slate-800">
+                        {formatCurrency(lineSubtotal)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-slate-600">
+                        {formatCurrency(lineSGST)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-slate-600">
+                        {formatCurrency(lineCGST)}
+                      </td>
+                      <td className="px-4 py-4 text-right font-bold text-indigo-700">
+                        {formatCurrency(lineTotalAmount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gradient-to-r from-slate-50 to-slate-100 print:bg-gray-100">
+                  <td className="px-4 py-4 text-right font-bold text-slate-800" colSpan={4}>
+                    TOTAL:
+                  </td>
+                  <td className="px-4 py-4 text-right font-bold text-slate-800">
+                    {formatCurrency(subtotal)}
+                  </td>
+                  <td className="px-4 py-4 text-right font-bold text-slate-800">
+                    {formatCurrency(totalSGST)}
+                  </td>
+                  <td className="px-4 py-4 text-right font-bold text-slate-800">
+                    {formatCurrency(totalCGST)}
+                  </td>
+                  <td className="px-4 py-4 text-right font-bold text-xl text-indigo-700">
+                    {formatCurrency(grandTotal)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
 
-        {/* --- FOOTER at the absolute bottom of PDF --- */}
+        {/* --- FOOTER SECTION --- */}
         <div
           id="footer-section"
-          className="pt-8 mt-4 border-t border-slate-200 space-y-6 print:pt-0 print:mt-0 print:border-t print:bg-white print:fixed print:left-0 print:right-0 print:bottom-0 print:w-full"
-          style={{
-            position: "static",
-          }}
+          className="space-y-6 pt-4"
         >
-          <div className="text-base font-semibold text-indigo-800 bg-indigo-50 rounded-lg px-4 py-3 shadow-sm print:shadow-none print:bg-indigo-50 no-print-bg">
-            <span className="font-medium text-slate-600">
-              Amount in words:{" "}
-            </span>
-            {amountInWords(grandTotal)}
-          </div>
-          <div className="flex justify-between items-end gap-8">
-            <div className="flex-grow">
-              <h3 className="text-gray-500 font-semibold mb-2">Remarks</h3>
-              <p className="text-gray-700 bg-slate-50 rounded-lg p-3 min-h-[80px] border border-slate-200 print:bg-gray-50 no-print-bg">
-                {invoice.notes || "No notes provided."}
-              </p>
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Remarks Section with Amount in Words */}
+            <div className="flex-1">
+              <h3 className="text-slate-600 font-bold mb-3 text-base">Remarks & Amount in Words</h3>
+              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-3 print:bg-gray-50">
+                <div className="text-slate-700 leading-relaxed min-h-[60px]">
+                  {invoice.notes || "No additional remarks provided."}
+                </div>
+                <div className="border-t border-slate-300 pt-3 mt-3">
+                  <p className="font-semibold text-indigo-800 text-sm">
+                    <span className="text-slate-600 font-medium">Amount in Words: </span>
+                    {amountInWords(grandTotal)}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="min-w-[240px] text-center flex-shrink-0">
-              <div className="h-20" /> {/* Spacer for signature */}
-              <div className="border-t border-slate-400 pt-2">
-                <p className="font-semibold text-slate-800">
-                  For {invoice.from?.name || "Shelter Architects and Builders"}
-                </p>
-                <p className="text-sm text-slate-500">Authorised Signatory</p>
+
+            {/* Tax Summary and Signature */}
+            <div className="lg:min-w-[320px] space-y-6">
+              {/* Tax Summary */}
+              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">
+                  Summary
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600">Subtotal:</span>
+                    <span className="font-medium text-slate-800">{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600">Total SGST:</span>
+                    <span className="font-medium text-slate-800">{formatCurrency(totalSGST)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600">Total CGST:</span>
+                    <span className="font-medium text-slate-800">{formatCurrency(totalCGST)}</span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-2 mt-3">
+                    <div className="flex justify-between items-center py-1">
+                      <span className="font-bold text-slate-800">Grand Total:</span>
+                      <span className="font-bold text-lg text-indigo-700">{formatCurrency(grandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature Section */}
+              <div className="text-center">
+                <div className="h-20 mb-4"></div>
+                <div className="border-t-2 border-slate-400 pt-3 max-w-[200px] mx-auto">
+                  <p className="font-bold text-slate-800 text-sm">
+                    For {invoice.from?.name || "Shelter Architects and Builders"}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Authorised Signatory</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t print:hidden">
-        <Button variant="secondary" onClick={handlePrint}>
-          Print
+      <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 print:hidden print-hidden">
+        <Button variant="secondary" onClick={handlePrint} className="px-6">
+          📄 Print Invoice
         </Button>
-        <Button variant="primary" onClick={onClose}>
+        <Button variant="primary" onClick={onClose} className="px-6">
           Close
         </Button>
       </div>
