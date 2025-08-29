@@ -44,21 +44,21 @@ export function InvoiceForm({
   const companies = [
     {
       name: "Aneesh kandoth kandiyil",
-      address: "",
+      address: "_",
       mobile: "9745834089",
       gstin: "32CXSPA4511R1Z6", // Updated based on image
     },
     {
       name: "Asees Nelliyullathil",
-      address: "",
+      address: "_",
       mobile: "9747807594",
       gstin: "32AWHPN0956D1ZS",
     },
     {
       name: "Shelter Architects and Builders",
-      address: "",
+      address: "_",
       mobile: "9999999999",
-      gstin: "  " 
+      gstin: "_"
     },
   ];
   // --- STATE MANAGEMENT ---

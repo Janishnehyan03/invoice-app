@@ -53,13 +53,14 @@ router.get("/", async (req, res) => {
 // create invoice
 router.post("/", async (req, res) => {
   try {
-    const { to, workName, date, items, notes, total, from } = req.body;
+    const { to, workName, date, items, notes, total, from, workCode } = req.body;
     const invoiceNumber = "IN-" + new Date().getTime(); // Generate a unique invoice number
 
     const invoice = await Invoice.create({
       invoiceNumber,
       to,
       workName,
+      workCode,
       date,
       items,
       total,
