@@ -213,7 +213,10 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         className="print-container space-y-6 text-sm p-6 print:p-0"
       >
         {/* --- INVOICE HEADER --- */}
-        <div id="invoice-header" className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-xl shadow-sm p-6 border border-slate-200 print:bg-white print:shadow-none print:border print:rounded-none">
+        <div
+          id="invoice-header"
+          className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start bg-gradient-to-br from-indigo-50 via-blue-50 to-white rounded-xl shadow-sm p-6 border border-slate-200 print:bg-white print:shadow-none print:border print:rounded-none"
+        >
           <div className="flex items-start gap-4">
             {invoice.from?.name === "Shelter Architects and Builders" && (
               <img
@@ -230,7 +233,8 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                 {invoice.from?.fromAddress || "Company Address"}
               </span>
               <span className="text-gray-500 text-xs mt-2 font-medium">
-                GSTIN: {invoice.from?.fromGSTIN || "32CXSPA4511R1Z6"}
+                {invoice.from?.fromGSTIN && "GSTIN:"}{" "}
+                {invoice.from?.fromGSTIN || " "}
               </span>
             </div>
           </div>
@@ -243,11 +247,17 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               <span className="text-slate-900 font-medium">
                 {invoice.workName}
               </span>
+              <span className="font-semibold text-slate-600">Work Code :</span>
+              <span className="text-slate-900 font-medium">
+                {invoice?.workCode}
+              </span>
               <span className="font-semibold text-slate-600">Invoice No:</span>
               <span className="text-slate-900 font-medium">
                 {invoice.invoiceNumber}
               </span>
-              <span className="font-semibold text-slate-600">Invoice Date:</span>
+              <span className="font-semibold text-slate-600">
+                Invoice Date:
+              </span>
               <span className="text-slate-900 font-medium">
                 {formatDate(invoice.date)}
               </span>
@@ -264,11 +274,17 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
             <table className="w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100 print:bg-gray-100">
                 <tr className="text-xs text-slate-700 uppercase tracking-wider">
-                  <th className="px-4 py-4 font-bold text-center w-16">Sl No</th>
-                  <th className="px-4 py-4 font-bold text-left min-w-[200px]">Item Description</th>
+                  <th className="px-4 py-4 font-bold text-center w-16">
+                    Sl No
+                  </th>
+                  <th className="px-4 py-4 font-bold text-left min-w-[200px]">
+                    Item Description
+                  </th>
                   <th className="px-4 py-4 font-bold text-center w-20">Qty</th>
                   <th className="px-4 py-4 font-bold text-right w-28">Rate</th>
-                  <th className="px-4 py-4 font-bold text-right w-28">Subtotal</th>
+                  <th className="px-4 py-4 font-bold text-right w-28">
+                    Subtotal
+                  </th>
                   <th className="px-4 py-4 font-bold text-right w-24">SGST</th>
                   <th className="px-4 py-4 font-bold text-right w-24">CGST</th>
                   <th className="px-4 py-4 font-bold text-right w-32">Total</th>
@@ -289,7 +305,10 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                   const lineTotalAmount = lineSubtotal + lineSGST + lineCGST;
 
                   return (
-                    <tr key={index} className="hover:bg-slate-25 print:hover:bg-transparent">
+                    <tr
+                      key={index}
+                      className="hover:bg-slate-25 print:hover:bg-transparent"
+                    >
                       <td className="px-4 py-4 text-center font-medium text-slate-600">
                         {index + 1}
                       </td>
@@ -320,7 +339,10 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               </tbody>
               <tfoot>
                 <tr className="bg-gradient-to-r from-slate-50 to-slate-100 print:bg-gray-100">
-                  <td className="px-4 py-4 text-right font-bold text-slate-800" colSpan={4}>
+                  <td
+                    className="px-4 py-4 text-right font-bold text-slate-800"
+                    colSpan={4}
+                  >
                     TOTAL:
                   </td>
                   <td className="px-4 py-4 text-right font-bold text-slate-800">
@@ -342,21 +364,22 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         </div>
 
         {/* --- FOOTER SECTION --- */}
-        <div
-          id="footer-section"
-          className="space-y-6 pt-4"
-        >
+        <div id="footer-section" className="space-y-6 pt-4">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Remarks Section with Amount in Words */}
             <div className="flex-1">
-              <h3 className="text-slate-600 font-bold mb-3 text-base">Remarks & Amount in Words</h3>
+              <h3 className="text-slate-600 font-bold mb-3 text-base">
+                Remarks & Amount in Words
+              </h3>
               <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-3 print:bg-gray-50">
                 <div className="text-slate-700 leading-relaxed min-h-[60px]">
                   {invoice.notes || "No additional remarks provided."}
                 </div>
                 <div className="border-t border-slate-300 pt-3 mt-3">
                   <p className="font-semibold text-indigo-800 text-sm">
-                    <span className="text-slate-600 font-medium">Amount in Words: </span>
+                    <span className="text-slate-600 font-medium">
+                      Amount in Words:{" "}
+                    </span>
                     {amountInWords(grandTotal)}
                   </p>
                 </div>
@@ -373,20 +396,30 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-600">Subtotal:</span>
-                    <span className="font-medium text-slate-800">{formatCurrency(subtotal)}</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(subtotal)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-600">Total SGST:</span>
-                    <span className="font-medium text-slate-800">{formatCurrency(totalSGST)}</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(totalSGST)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="text-slate-600">Total CGST:</span>
-                    <span className="font-medium text-slate-800">{formatCurrency(totalCGST)}</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(totalCGST)}
+                    </span>
                   </div>
                   <div className="border-t border-slate-200 pt-2 mt-3">
                     <div className="flex justify-between items-center py-1">
-                      <span className="font-bold text-slate-800">Grand Total:</span>
-                      <span className="font-bold text-lg text-indigo-700">{formatCurrency(grandTotal)}</span>
+                      <span className="font-bold text-slate-800">
+                        Grand Total:
+                      </span>
+                      <span className="font-bold text-lg text-indigo-700">
+                        {formatCurrency(grandTotal)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -397,9 +430,12 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                 <div className="h-20 mb-4"></div>
                 <div className="border-t-2 border-slate-400 pt-3 max-w-[200px] mx-auto">
                   <p className="font-bold text-slate-800 text-sm">
-                    For {invoice.from?.name || "Shelter Architects and Builders"}
+                    For{" "}
+                    {invoice.from?.name || "Shelter Architects and Builders"}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">Authorised Signatory</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Authorised Signatory
+                  </p>
                 </div>
               </div>
             </div>

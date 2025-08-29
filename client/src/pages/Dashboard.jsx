@@ -1,96 +1,94 @@
 import { Box, FileText } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+/**
+ * Large, modern Button component (for future expansion).
+ */
+function Button({ children, className = "", ...props }) {
+  return (
+    <button
+      type="button"
+      className={`inline-flex items-center justify-center gap-3 px-7 py-4 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 text-white text-lg font-semibold shadow-lg hover:from-gray-800 hover:to-gray-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400 focus-visible:ring-offset-2 transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Large Card component for dashboard.
+ */
+function LargeCard({ children, className = "", ...props }) {
+  return (
+    <section
+      className={`bg-gradient-to-br from-white via-gray-50 to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-10 sm:p-14 md:p-16 transition-shadow duration-200 hover:shadow-2xl focus-within:ring-4 focus-within:ring-gray-400 ${className}`}
+      tabIndex={-1}
+      {...props}
+    >
+      {children}
+    </section>
+  );
+}
+
+/**
+ * BigStatCard -- prominent, highly visible dashboard card.
+ */
+function BigStatCard({ title, icon, description, to }) {
+  return (
+    <li className="flex">
+      <Link
+        to={to}
+        className="group focus-visible:outline-none rounded-3xl w-full block"
+        aria-label={`Go to ${title}`}
+      >
+        <LargeCard className="flex flex-col items-center gap-7 group hover:bg-gray-100/70 transition-colors duration-150 h-full justify-center text-center">
+          <div className="flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-100 text-gray-700 group-hover:bg-gray-200 transition-colors duration-150 mb-2 shadow">
+            {icon}
+          </div>
+          <h2 className="text-3xl font-extrabold text-gray-900 group-hover:text-gray-700 transition-colors duration-150">
+            {title}
+          </h2>
+          <p className="mt-2 text-lg text-gray-500 font-medium">
+            {description}
+          </p>
+        </LargeCard>
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * Dashboard: only two big cards, centered in the viewport.
+ */
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    invoices: 0,
-    items: 0,
-  });
-
-  useEffect(() => {
-    // Mock API data - replace with real API calls
-    setStats({
-      invoices: 12,
-      items: 24,
-    });
-  }, []);
-
   const cards = [
     {
       title: "Invoices",
-      value: stats.invoices,
-      icon: (
-        <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-tr from-blue-400 to-blue-600 shadow-lg text-white group-hover:scale-105 transition-transform">
-          <FileText size={28} />
-        </div>
-      ),
-      accent: "from-blue-50 to-blue-100",
+      icon: <FileText size={48} aria-hidden="true" focusable={false} />,
       to: "/invoices",
       description: "View and manage all your invoices",
     },
     {
       title: "Items",
-      value: stats.items,
-      icon: (
-        <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-tr from-purple-400 to-purple-600 shadow-lg text-white group-hover:scale-105 transition-transform">
-          <Box size={28} />
-        </div>
-      ),
-      accent: "from-purple-50 to-purple-100",
+      icon: <Box size={48} aria-hidden="true" focusable={false} />,
       to: "/items",
       description: "Manage inventory and billable items",
     },
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-tr from-slate-100 via-blue-50 to-gray-200 pb-32">
-      {/* Header */}
-      <header className="px-8 pt-14 pb-10 flex flex-col gap-2 bg-white shadow-md rounded-b-3xl mb-14 border-b border-blue-100">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-          <span className="bg-gradient-to-tr from-blue-400 to-purple-600 bg-clip-text text-transparent drop-shadow">
-            Dashboard
-          </span>
-        </h1>
-        <div className="text-gray-500 text-lg sm:text-xl font-medium mt-1">
-          Welcome back! Here’s a quick overview of your business.
-        </div>
-      </header>
-
-      {/* Stats Grid */}
-      <section
-        aria-label="Quick stats"
-        className="grid grid-cols-1 sm:grid-cols-2  gap-8 px-8"
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-gray-50 to-white flex items-center justify-center">
+      <nav
+        aria-label="Dashboard main links"
+        className="w-full max-w-5xl px-4 sm:px-8"
       >
-        {cards.map((card) => (
-          <Link
-            key={card.title}
-            to={card.to}
-            className="group outline-none"
-            aria-label={`Go to ${card.title}`}
-          >
-            <div
-              className={`bg-gradient-to-tr ${card.accent} rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.03] transition-transform duration-200 cursor-pointer p-7 flex flex-col items-start gap-5`}
-            >
-              {card.icon}
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-                  {card.title}
-                </span>
-
-                <span className="mt-3 text-sm text-gray-400">
-                  {card.description}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </section>
-
-      {/* Footer */}
-      <footer className="mt-24 flex justify-center text-xs text-gray-400">
-        &copy; {new Date().getFullYear()} Your Company. All rights reserved.
-      </footer>
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 w-full items-center">
+          {cards.map((card) => (
+            <BigStatCard key={card.title} {...card} />
+          ))}
+        </ul>
+      </nav>
     </main>
   );
 }

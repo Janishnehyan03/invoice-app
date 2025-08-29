@@ -37,6 +37,7 @@ const invoiceSchema = new mongoose.Schema(
       trim: true,
     },
     workName: { type: String, required: true, trim: true },
+    workCode: { type: String, required: true, trim: true },
     date: { type: Date, required: true, default: Date.now },
     items: [
       {

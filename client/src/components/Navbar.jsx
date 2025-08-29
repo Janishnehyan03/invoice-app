@@ -1,9 +1,18 @@
-import {
-  Home
-} from "lucide-react";
+import { Home } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-// src/components/Navbar.jsx
+// Reusable Button for consistency and accessibility
+function Button({ children, className = "", ...props }) {
+  return (
+    <button
+      className={`focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-700 transition-colors disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Navbar() {
   const navigate = useNavigate();
 
@@ -11,22 +20,33 @@ export default function Navbar() {
     localStorage.clear();
     navigate("/login");
   }
+
   return (
-    <nav className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg p-4 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Link to="/" className="flex items-center gap-2 text-white">
-        <Home className="h-6 w-6 text-white" />
-        <h1 className="text-2xl font-bold text-white tracking-wide">
-          Invoice Generator
-        </h1>
-        </Link>
-      </div>
-      <button
-        onClick={handleLogout}
-        className="bg-white text-blue-600 font-semibold px-5 py-2 rounded-full shadow hover:bg-blue-50 transition"
+    <header>
+      <nav
+        className="w-full bg-gray-900 shadow-lg px-4 sm:px-8 py-3 flex items-center justify-between"
+        aria-label="Primary Navigation"
       >
-        Logout
-      </button>
-    </nav>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 rounded"
+            aria-label="Go to homepage"
+          >
+            <Home className="h-7 w-7 text-white drop-shadow" aria-hidden="true" />
+            <span className="text-2xl font-bold tracking-wide drop-shadow-sm">
+              Invoice Generator
+            </span>
+          </Link>
+        </div>
+        <Button
+          onClick={handleLogout}
+          className="bg-white text-sky-700 font-semibold px-5 py-2 rounded-full shadow hover:bg-sky-100 hover:text-sky-800 focus-visible:ring-sky-800"
+          aria-label="Logout"
+        >
+          Logout
+        </Button>
+      </nav>
+    </header>
   );
 }

@@ -44,26 +44,27 @@ export function InvoiceForm({
   const companies = [
     {
       name: "Aneesh kandoth kandiyil",
-      address: "CHERAPURAM - KOZHIKODE, KERALA - 673507",
+      address: "",
       mobile: "9745834089",
       gstin: "32CXSPA4511R1Z6", // Updated based on image
     },
     {
       name: "Asees Nelliyullathil",
-      address: "Nelliyullathil House, Kottakkal, Kerala - 676503",
+      address: "",
       mobile: "9747807594",
       gstin: "32AWHPN0956D1ZS",
     },
     {
       name: "Shelter Architects and Builders",
-      address: "Shelter Architects and Builders, Kottakkal, Kerala - 676503",
+      address: "",
       mobile: "9999999999",
-      gstin: "32AWHPN0956D1ZS",
+      gstin: "  " 
     },
   ];
   // --- STATE MANAGEMENT ---
   const [company, setCompany] = useState(companies[0]);
   const [workName, setWorkName] = useState("");
+  const [workCode, setWorkCode] = useState("");
   const [to, setTo] = useState("");
   const [from, setFrom] = useState(() => ({
     fromAddress: company?.address || "",
@@ -263,6 +264,7 @@ export function InvoiceForm({
     const filteredInvoiceItems = invoiceItems.filter((it) => it.itemId);
     const payload = {
       workName,
+      workCode,
       to,
       from,
       date,
@@ -373,6 +375,16 @@ export function InvoiceForm({
             value={workName}
             onChange={(e) => setWorkName(e.target.value)}
             placeholder="e.g., Website Redesign"
+            className="bg-gray-50"
+          />
+          <Input
+            id="workCode"
+            label="Work Code"
+            type="text"
+            required
+            value={workCode}
+            onChange={(e) => setWorkCode(e.target.value)}
+            placeholder="e.g., WEB-001"
             className="bg-gray-50"
           />
         </div>

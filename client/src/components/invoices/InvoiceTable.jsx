@@ -5,79 +5,77 @@ import {
 } from "@heroicons/react/24/outline";
 
 /**
- * Clean, modern, and responsive table row for invoice list, matching your variable names.
+ * Large, modern, and accessible table row for invoice list.
+ * Uses a gray/gray color theme to match the new dashboard.
  */
 const TableRow = ({ invoice, onView, onEdit, onDelete }) => (
-  <tr
-    key={invoice._id}
-    className="transition hover:bg-indigo-50/80 group"
-  >
-    <td className="whitespace-nowrap py-4 pl-6 pr-4 text-sm">
-      <div className="flex items-center gap-3">
+  <tr className="transition hover:bg-gray-50/90 group">
+    <td className="whitespace-nowrap py-6 pl-8 pr-6 text-lg">
+      <div className="flex items-center gap-5">
         {/* User avatar or placeholder */}
-        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
+        <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-tr from-gray-500 to-gray-500 flex items-center justify-center text-white font-black text-2xl shadow-md group-hover:scale-105 transition-transform duration-150">
           {invoice.to?.[0]?.toUpperCase() || "C"}
         </div>
         <div>
-          <div className="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors flex items-center gap-1">
+          <div className="font-bold text-gray-900 group-hover:text-gray-700 transition-colors flex items-center gap-2">
             {invoice.to}
             {invoice.isPaid && (
-              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200 animate-fadeIn">
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-green-200 to-green-100 text-green-800 border border-green-300 animate-fadeIn">
                 Paid
               </span>
             )}
           </div>
-          <div className="mt-0.5 text-xs text-gray-500 tracking-wide">
-            <span className="bg-gray-100 px-2 py-0.5 rounded font-mono">
+          <div className="mt-1 text-sm text-gray-500 tracking-wide">
+            <span className="bg-gray-100 px-3 py-1 rounded font-mono text-gray-700 shadow">
               #{invoice.invoiceNumber}
             </span>
           </div>
         </div>
       </div>
     </td>
-    <td className="whitespace-nowrap px-3 py-4 text-sm">
-      <div className="font-medium text-gray-700 truncate max-w-xs">
+    <td className="whitespace-nowrap px-6 py-6 text-lg">
+      <div className="font-semibold text-gray-700 truncate max-w-xs">
         {invoice.workName || <span className="italic text-gray-400">N/A</span>}
       </div>
-      <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
+      <div className="mt-2 text-sm text-gray-400 flex flex-wrap items-center gap-3">
         <span>
           {invoice.date ? new Date(invoice.date).toLocaleDateString() : "--"}
         </span>
         {invoice.dueDate && (
           <>
-            <span className="text-gray-300">|</span>
-            <span className="text-xs text-orange-500">
+            <span className="text-gray-200">|</span>
+            <span className="text-sm text-gray-600 font-medium">
               Due: {new Date(invoice.dueDate).toLocaleDateString()}
             </span>
           </>
         )}
       </div>
     </td>
-    <td className="whitespace-nowrap py-4 pr-6 text-right text-sm font-medium">
-      <div className="flex items-center justify-end gap-1.5">
+    <td className="whitespace-nowrap py-6 pr-8 text-right text-lg font-medium">
+      <div className="flex items-center justify-end gap-2">
         <button
           onClick={() => onView(invoice)}
-          className="rounded-full p-2 text-indigo-600 hover:text-white hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-300 transition group"
+          className="rounded-full p-3 text-gray-700 hover:text-white hover:bg-gray-600 focus:ring-2 focus:ring-gray-400 focus:outline-none transition shadow-sm"
           title={`View ${invoice.invoiceNumber}`}
           aria-label={`View ${invoice.invoiceNumber}`}
         >
-          <EyeIcon className="h-5 w-5" />
+          <EyeIcon className="h-6 w-6" />
         </button>
         <button
           onClick={() => onEdit(invoice)}
-          className="rounded-full p-2 text-gray-500 hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-gray-400 transition group"
+          className="rounded-full p-3 text-gray-500 hover:text-white hover:bg-gray-700 focus:ring-2 focus:ring-gray-400 focus:outline-none transition shadow-sm"
           title={`Edit ${invoice.invoiceNumber}`}
           aria-label={`Edit ${invoice.invoiceNumber}`}
         >
-          <PencilSquareIcon className="h-5 w-5" />
+          <PencilSquareIcon className="h-6 w-6" />
         </button>
         <button
           onClick={() => onDelete(invoice)}
-          className="rounded-full p-2 text-red-500 hover:text-white hover:bg-red-500 focus:ring-2 focus:ring-red-300 transition group"
+          className="rounded-full p-3 text-rose-500 hover:text-white hover:bg-rose-600 focus:ring-2 focus:ring-rose-400 focus:outline-none transition shadow-sm"
           title={`Delete ${invoice.invoiceNumber}`}
           aria-label={`Delete ${invoice.invoiceNumber}`}
         >
-          <TrashIcon className="h-5 w-5" />
+          <TrashIcon className="h-6 w-6" />
         </button>
       </div>
     </td>
@@ -86,36 +84,36 @@ const TableRow = ({ invoice, onView, onEdit, onDelete }) => (
 
 export const InvoiceTable = ({ invoices, onView, onEdit, onDelete }) => {
   return (
-    <div className="overflow-x-auto rounded-2xl shadow-xl ring-1 ring-slate-100 bg-white">
-      <table className="min-w-full divide-y divide-slate-100">
-        <thead className="bg-gradient-to-r from-indigo-50 via-white to-blue-50 sticky top-0 z-10">
+    <div className="overflow-x-auto rounded-3xl shadow-2xl ring-1 ring-gray-100 bg-gradient-to-br from-white via-gray-50 to-gray-50">
+      <table className="min-w-full divide-y divide-gray-100 text-base">
+        <thead className="bg-gradient-to-r from-gray-100 via-white to-gray-100 sticky top-0 z-10">
           <tr>
             <th
               scope="col"
-              className="py-3.5 pl-6 pr-4 text-left text-xs font-extrabold text-slate-700 tracking-widest uppercase"
+              className="py-5 pl-8 pr-6 text-left text-sm font-black text-gray-700 tracking-widest uppercase"
             >
               Client / Invoice #
             </th>
             <th
               scope="col"
-              className="px-3 py-3.5 text-left text-xs font-extrabold text-slate-700 tracking-widest uppercase"
+              className="px-6 py-5 text-left text-sm font-black text-gray-700 tracking-widest uppercase"
             >
               Work Name / Date
             </th>
             <th
               scope="col"
-              className="py-3.5 pr-6 text-right text-xs font-extrabold text-slate-700 tracking-widest uppercase"
+              className="py-5 pr-8 text-right text-sm font-black text-gray-700 tracking-widest uppercase"
             >
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-50">
+        <tbody className="divide-y divide-gray-50">
           {invoices.length === 0 ? (
             <tr>
               <td
                 colSpan={3}
-                className="p-8 text-center text-gray-400 italic bg-white"
+                className="p-12 text-center text-gray-300 italic bg-white text-lg"
               >
                 No invoices to display.
               </td>
