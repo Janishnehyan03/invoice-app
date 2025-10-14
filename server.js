@@ -9,6 +9,8 @@ const { requireAuth } = require("./middleware/authMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const invoiceRoutes = require("./routes/invoiceRoutes");
+const clientRoutes = require("./routes/clientRoute");
+const dashboardRoutes = require("./routes/dashboardRoute");
 
 const app = express();
 const PORT = process.env.PORT || 5100;
@@ -41,6 +43,8 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/items", requireAuth, itemRoutes);
 app.use("/api/invoices", requireAuth, invoiceRoutes);
+app.use("/api/clients", requireAuth, clientRoutes);
+app.use("/api/dashboard", requireAuth, dashboardRoutes);
 
 process.env.PWD = process.cwd();
 app.use(express.static(path.join(process.env.PWD, "public")));

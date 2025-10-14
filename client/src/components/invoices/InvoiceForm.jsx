@@ -2,38 +2,39 @@ import { useEffect, useMemo, useState } from "react";
 import Axios from "../../utils/Axios";
 import { Button } from "../ui/Button";
 import { Input, Textarea } from "../ui/Input";
-import { TrashIcon } from "../ui/TrashIcon";
+import { Select } from "../ui/Select";
+import { ClientSearch } from "./ClientSearch";
+import { InvoiceItemsTable } from "./InvoiceItemsTable";
+import { TotalsBox } from "./TotalsBox";
 
-// A reusable Select component for consistency
-function Select({ id, label, children, ...props }) {
-  return (
-    <div className="mb-2">
-      {label && (
-        <label
-          htmlFor={id}
-          className="block text-sm font-semibold text-gray-700 mb-1"
-        >
-          {label}
-        </label>
-      )}
-      <select
-        id={id}
-        {...props}
-        className="block w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition duration-150 ease-in-out sm:text-sm"
-      >
-        {children}
-      </select>
-    </div>
-  );
-}
-
-// Helper to format currency
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("en-IN", {
+// Helper
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(amount);
-};
+
+const companies = [
+  {
+    name: "Aneesh kandoth kandiyil",
+    address: "Cherapuram PO\n+91 97458 34089",
+    mobile: "9745834089",
+    gstin: "32CXSPA4511R1Z6",
+  },
+  {
+    name: "Asees Nelliyullathil",
+    address: "Cherapuram PO\n+91 97458 34089",
+    mobile: "9747807594",
+    gstin: "32AWHPN0956D1ZS",
+  },
+  {
+    name: "Shelter Architects and Builders",
+    address:
+      "Vadakara Road Theekkuni\nOpposite Akshaya Centre\n9747807594,9544260713",
+    mobile: "9999999999",
+    gstin: "_",
+  },
+];
 
 export function InvoiceForm({
   onCreated,
@@ -41,31 +42,14 @@ export function InvoiceForm({
   onClose,
   invoiceToEdit = null,
 }) {
-  const companies = [
-    {
-      name: "Aneesh kandoth kandiyil",
-      address: "_",
-      mobile: "9745834089",
-      gstin: "32CXSPA4511R1Z6", // Updated based on image
-    },
-    {
-      name: "Asees Nelliyullathil",
-      address: "_",
-      mobile: "9747807594",
-      gstin: "32AWHPN0956D1ZS",
-    },
-    {
-      name: "Shelter Architects and Builders",
-      address: "_",
-      mobile: "9999999999",
-      gstin: "_"
-    },
-  ];
-  // --- STATE MANAGEMENT ---
+  // --- STATE ---
   const [company, setCompany] = useState(companies[0]);
   const [workName, setWorkName] = useState("");
   const [workCode, setWorkCode] = useState("");
-  const [to, setTo] = useState("");
+  const [allClients, setAllClients] = useState([]);
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [client, setClient] = useState("");
   const [from, setFrom] = useState(() => ({
     fromAddress: company?.address || "",
     fromMobile: company?.mobile || "",
@@ -88,39 +72,55 @@ export function InvoiceForm({
     },
   ]);
   const [availableItems, setAvailableItems] = useState([]);
-
   const [isLoadingItems, setIsLoadingItems] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const isEditMode = Boolean(invoiceToEdit?._id);
 
   // --- DATA FETCHING ---
   useEffect(() => {
-    const getAvailableItems = async () => {
-      try {
-        setIsLoadingItems(true);
-        const response = await Axios.get("/items");
-        setAvailableItems(response.data || []);
-      } catch (error) {
-        console.error("Error fetching available items:", error);
-      } finally {
-        setIsLoadingItems(false);
-      }
-    };
-    getAvailableItems();
+    Axios.get("/items")
+      .then((res) => setAvailableItems(res.data || []))
+      .catch(console.error)
+      .finally(() => setIsLoadingItems(false));
+    Axios.get("/clients")
+      .then((res) => setAllClients(res.data || []))
+      .catch(console.error);
   }, []);
 
-  // Hydrate invoice items ONLY when entering edit mode or invoiceToEdit changes
+  // Hydrate on edit
   useEffect(() => {
     if (isEditMode && invoiceToEdit) {
+      // Prevent running this logic until async data is loaded
+      if (availableItems.length === 0 || allClients.length === 0) {
+        return;
+      }
+
+      // Set the "Bill From" company based on invoice data
+      const fromCompany = companies.find(
+        (c) => c.name === invoiceToEdit.from.name
+      );
+      if (fromCompany) {
+        setCompany(fromCompany);
+      }
+
       setWorkName(invoiceToEdit.workName);
-      setTo(invoiceToEdit.to);
+      setWorkCode(invoiceToEdit.workCode || "");
+      const clientId = invoiceToEdit.to?._id || invoiceToEdit.to;
+      setClient(clientId);
       setDate(new Date(invoiceToEdit.date).toISOString().substring(0, 10));
       setNotes(invoiceToEdit.notes || "");
+
+      // Populate the "Bill To" section correctly
+      const clientToSet = allClients.find((c) => c._id === clientId);
+      if (clientToSet) {
+        setSelectedClient(clientToSet);
+        setClientSearchQuery(clientToSet.name); // Also populate the search input text
+      }
 
       setInvoiceItems(
         invoiceToEdit.items.map((itemOnInvoice) => {
           let itemId = itemOnInvoice.item?._id || itemOnInvoice.item;
-          // Try to get details from availableItems if possible
           const fullItem = availableItems.find((i) => i._id === itemId);
           return {
             itemId: fullItem?._id || itemId || "",
@@ -135,6 +135,15 @@ export function InvoiceForm({
         })
       );
     } else if (!isEditMode) {
+      // Reset form when switching from edit to create mode
+      setWorkName("");
+      setWorkCode("");
+      setClient("");
+      setSelectedClient(null);
+      setClientSearchQuery("");
+      setCompany(companies[0]);
+      setDate(new Date().toISOString().substring(0, 10));
+      setNotes("");
       setInvoiceItems([
         {
           itemId: "",
@@ -147,27 +156,7 @@ export function InvoiceForm({
         },
       ]);
     }
-    // Only hydrate when invoiceToEdit or isEditMode changes, not availableItems!
-  }, [invoiceToEdit, isEditMode]);
-
-  // If availableItems arrive after invoice is hydrated, fill in new details for existing items
-  useEffect(() => {
-    if (availableItems.length === 0) return;
-    setInvoiceItems((prev) =>
-      prev.map((item) => {
-        if (!item.itemId) return item;
-        const fullItem = availableItems.find((i) => i._id === item.itemId);
-        if (!fullItem) return item;
-        return {
-          ...item,
-          description: fullItem.name,
-          price: fullItem.price ?? 0,
-          sgst: fullItem.sgst ?? 0,
-          cgst: fullItem.cgst ?? 0,
-        };
-      })
-    );
-  }, [availableItems]);
+  }, [invoiceToEdit, isEditMode, availableItems, allClients]);
 
   useEffect(() => {
     setFrom({
@@ -197,7 +186,15 @@ export function InvoiceForm({
     );
   }, [invoiceItems]);
 
-  // --- ITEM MANIPULATION HANDLERS ---
+  // --- FIX: Correctly handle adding a new client ---
+  const handleAddNewClient = (newClient) => {
+    setAllClients((prevClients) => [...prevClients, newClient]);
+    setSelectedClient(newClient);
+    setClient(newClient._id);
+    setClientSearchQuery(newClient.name);
+  };
+
+  // --- HANDLERS ---
   const handleItemSelect = (index, selectedItemId) => {
     const selectedItem = availableItems.find(
       (item) => item._id === selectedItemId
@@ -205,7 +202,6 @@ export function InvoiceForm({
     setInvoiceItems((prev) => {
       const next = [...prev];
       const currentItem = next[index];
-
       if (selectedItem) {
         next[index] = {
           ...currentItem,
@@ -257,15 +253,19 @@ export function InvoiceForm({
     setInvoiceItems((prev) => prev.filter((_, i) => i !== indexToRemove));
   };
 
-  // --- FORM SUBMISSION ---
+  // --- SUBMIT ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!client) {
+      alert("Please select or add a client for 'Bill To'.");
+      return;
+    }
     setIsSubmitting(true);
     const filteredInvoiceItems = invoiceItems.filter((it) => it.itemId);
     const payload = {
       workName,
       workCode,
-      to,
+      client,
       from,
       date,
       total: grandTotal,
@@ -297,7 +297,6 @@ export function InvoiceForm({
       }
       onClose();
     } catch (err) {
-      console.error("Submit invoice error:", err);
       alert(
         err?.response?.data?.message ||
           `Failed to ${isEditMode ? "update" : "create"} invoice.`
@@ -307,6 +306,7 @@ export function InvoiceForm({
     }
   };
 
+  // --- RENDER ---
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 mx-auto border border-gray-100">
       <form onSubmit={handleSubmit} className="space-y-10">
@@ -332,7 +332,6 @@ export function InvoiceForm({
             className="w-44"
           />
         </div>
-
         {/* Client Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
@@ -357,15 +356,16 @@ export function InvoiceForm({
               </option>
             ))}
           </Select>
-          <Input
-            id="client"
-            label="Bill To"
-            type="text"
-            required
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="Client Name or Company"
-            className="bg-gray-50"
+          <ClientSearch
+            allClients={allClients}
+            clientSearchQuery={clientSearchQuery}
+            setClientSearchQuery={setClientSearchQuery}
+            selectedClient={selectedClient}
+            setSelectedClient={setSelectedClient}
+            value={client}
+            setValue={setClient}
+            isEditMode={isEditMode}
+            onAddClient={handleAddNewClient}
           />
           <Input
             id="workName"
@@ -388,151 +388,17 @@ export function InvoiceForm({
             className="bg-gray-50"
           />
         </div>
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-900">
-              Invoice Items
-            </h3>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addItem}
-              className="text-gray-100 bg-gray-800 hover:bg-gray-700 focus:ring-2 focus:ring-gray-200"
-            >
-              <span className="mr-1 text-xl font-bold">+</span> Add Item
-            </Button>
-          </div>
-
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50/50">
-            {/* --- CHANGE START: Updated table headers to match invoice image --- */}
-            <div className="hidden sm:grid grid-cols-12 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider sticky top-0 z-10">
-              <div className="px-4 py-3 col-span-3">Item</div>
-              <div className="px-2 py-3 text-center col-span-1">Qty</div>
-              <div className="px-2 py-3 text-right col-span-2">Rate (₹)</div>
-              <div className="px-2 py-3 text-right col-span-2">Total (₹)</div>
-              <div className="px-2 py-3 text-right col-span-1">SGST (₹)</div>
-              <div className="px-2 py-3 text-right col-span-1">CGST (₹)</div>
-              <div className="px-2 py-3 text-right col-span-1">Total Amt</div>
-              <div className="px-2 py-3 col-span-1"></div>
-            </div>
-            {/* --- CHANGE END --- */}
-
-            <div className="divide-y divide-gray-200">
-              {invoiceItems.map((it, index) => {
-                // --- CHANGE START: More explicit calculations to match image columns ---
-                const itemSubtotal = (it.price || 0) * (it.qty || 0);
-                const itemSgstValue = itemSubtotal * ((it.sgst || 0) / 100);
-                const itemCgstValue = itemSubtotal * ((it.cgst || 0) / 100);
-                const itemTotal = itemSubtotal + itemSgstValue + itemCgstValue;
-                // --- CHANGE END ---
-
-                const isExistingItem = isEditMode && it.uploaded;
-
-                return (
-                  <div
-                    key={index}
-                    // --- CHANGE START: Grid layout updated for new columns ---
-                    className={`grid grid-cols-12 items-center gap-x-4 gap-y-2 px-4 py-3 text-sm border-b transition ${
-                      isExistingItem
-                        ? "bg-green-50/50"
-                        : index % 2 === 0
-                        ? "bg-white"
-                        : "bg-gray-50"
-                    } hover:bg-gray-100`}
-                    // --- CHANGE END ---
-                  >
-                    {/* Item Select */}
-                    <div className="col-span-12 sm:col-span-3 flex items-center gap-2">
-                      <select
-                        id={`item-name-${index}`}
-                        value={it.itemId || ""}
-                        onChange={(e) =>
-                          handleItemSelect(index, e.target.value)
-                        }
-                        required
-                        className={`w-full rounded-md border bg-white px-3 py-2 text-gray-800 text-sm shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition ${
-                          isExistingItem
-                            ? "border-green-300"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        <option value="" disabled>
-                          {isLoadingItems
-                            ? "Loading items..."
-                            : "Select item..."}
-                        </option>
-                        {availableItems.map((item) => (
-                          <option key={item._id} value={item._id}>
-                            {item.name}
-                          </option>
-                        ))}
-                      </select>
-                      {isExistingItem && (
-                        <span className="hidden sm:inline-block px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 border border-green-300">
-                          Saved
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="col-span-4 sm:col-span-1">
-                      <input
-                        id={`item-qty-${index}`}
-                        type="number"
-                        min="1"
-                        step="1"
-                        required
-                        value={it.qty}
-                        onChange={(e) => updateItemQty(index, e.target.value)}
-                        className="w-full rounded-md border border-gray-300 bg-gray-50 px-2 py-1 text-center text-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
-                      />
-                    </div>
-
-                    {/* Rate */}
-                    <div className="col-span-8 sm:col-span-2 text-right text-gray-700 font-medium">
-                      {formatCurrency(it.price)}
-                    </div>
-
-                    {/* --- NEW: Total (Subtotal) Column --- */}
-                    <div className="col-span-4 sm:col-span-2 text-right text-gray-800 font-medium">
-                      {formatCurrency(itemSubtotal)}
-                    </div>
-
-                    {/* SGST (₹ value) */}
-                    <div className="col-span-4 sm:col-span-1 text-right text-gray-600">
-                      {formatCurrency(itemSgstValue)}
-                    </div>
-
-                    {/* CGST (₹ value) */}
-                    <div className="col-span-4 sm:col-span-1 text-right text-gray-600">
-                      {formatCurrency(itemCgstValue)}
-                    </div>
-
-                    {/* Total Amount */}
-                    <div className="col-span-4 sm:col-span-1 text-right font-semibold text-indigo-700">
-                      {formatCurrency(itemTotal)}
-                    </div>
-
-                    {/* Delete button */}
-                    <div className="col-span-12 sm:col-span-1 flex justify-center sm:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="p-2 rounded-md hover:bg-red-100 transition"
-                        title="Remove item"
-                      >
-                        <TrashIcon className="w-5 h-5 text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Totals & Notes Section */}
+        <InvoiceItemsTable
+          invoiceItems={invoiceItems}
+          availableItems={availableItems}
+          isLoadingItems={isLoadingItems}
+          isEditMode={isEditMode}
+          onItemSelect={handleItemSelect}
+          onQtyChange={updateItemQty}
+          onAddItem={addItem}
+          onRemoveItem={removeItem}
+          formatCurrency={formatCurrency}
+        />
         <div className="flex flex-col md:flex-row md:items-start gap-8">
           <div className="flex-1">
             <Textarea
@@ -546,28 +412,15 @@ export function InvoiceForm({
             />
           </div>
           <div className="flex-1 max-w-xs ml-auto">
-            <div className="space-y-4 p-6 bg-indigo-50 border border-indigo-100 rounded-xl shadow-sm">
-              <div className="flex justify-between text-gray-700">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-gray-700">
-                <span>Total SGST</span>
-                <span>{formatCurrency(totalSgst)}</span>
-              </div>
-              <div className="flex justify-between text-gray-700">
-                <span>Total CGST</span>
-                <span>{formatCurrency(totalCgst)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg text-indigo-900 border-t pt-4 mt-4">
-                <span>Grand Total</span>
-                <span>{formatCurrency(grandTotal)}</span>
-              </div>
-            </div>
+            <TotalsBox
+              subtotal={subtotal}
+              totalSgst={totalSgst}
+              totalCgst={totalCgst}
+              grandTotal={grandTotal}
+              formatCurrency={formatCurrency}
+            />
           </div>
         </div>
-
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4 pt-8 border-t border-gray-100">
           <Button
             type="button"

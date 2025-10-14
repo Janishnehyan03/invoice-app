@@ -1,94 +1,108 @@
-import { Box, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Box, FileText, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import Axios from '../utils/Axios'
 
-/**
- * Large, modern Button component (for future expansion).
- */
-function Button({ children, className = "", ...props }) {
+// --- Reusable StatCard Component ---
+function StatCard({ title, icon, description, to, stat, loading }) {
   return (
-    <button
-      type="button"
-      className={`inline-flex items-center justify-center gap-3 px-7 py-4 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 text-white text-lg font-semibold shadow-lg hover:from-gray-800 hover:to-gray-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gray-400 focus-visible:ring-offset-2 transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
-      {...props}
+    <Link
+      to={to}
+      className="group block p-6 bg-white rounded-xl border border-slate-200 shadow-sm hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all duration-200"
+      aria-label={`View ${title}`}
     >
-      {children}
-    </button>
+      <div className="flex justify-between items-start">
+        <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600 group-hover:bg-indigo-200 transition-colors">
+          {icon}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="mt-6 h-10 w-24 bg-slate-200 rounded animate-pulse" />
+      ) : (
+        <p className="mt-4 text-4xl font-extrabold text-slate-900">
+          {stat?.toLocaleString() || 0}
+        </p>
+      )}
+
+      <p className="mt-1 text-sm text-slate-500">{description}</p>
+    </Link>
   );
 }
 
-/**
- * Large Card component for dashboard.
- */
-function LargeCard({ children, className = "", ...props }) {
+// --- Header Component ---
+function Header() {
   return (
-    <section
-      className={`bg-gradient-to-br from-white via-gray-50 to-gray-50 rounded-3xl shadow-xl border border-gray-100 p-10 sm:p-14 md:p-16 transition-shadow duration-200 hover:shadow-2xl focus-within:ring-4 focus-within:ring-gray-400 ${className}`}
-      tabIndex={-1}
-      {...props}
-    >
-      {children}
-    </section>
+    <header className="flex justify-between items-center mb-8">
+      <div>
+        <h1 className="text-3xl font-extrabold text-slate-900">
+          Dashboard Overview
+        </h1>
+        <p className="mt-1 text-slate-500">Hello, Admin! Welcome back.</p>
+      </div>
+    </header>
   );
 }
 
-/**
- * BigStatCard -- prominent, highly visible dashboard card.
- */
-function BigStatCard({ title, icon, description, to }) {
-  return (
-    <li className="flex">
-      <Link
-        to={to}
-        className="group focus-visible:outline-none rounded-3xl w-full block"
-        aria-label={`Go to ${title}`}
-      >
-        <LargeCard className="flex flex-col items-center gap-7 group hover:bg-gray-100/70 transition-colors duration-150 h-full justify-center text-center">
-          <div className="flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-100 text-gray-700 group-hover:bg-gray-200 transition-colors duration-150 mb-2 shadow">
-            {icon}
-          </div>
-          <h2 className="text-3xl font-extrabold text-gray-900 group-hover:text-gray-700 transition-colors duration-150">
-            {title}
-          </h2>
-          <p className="mt-2 text-lg text-gray-500 font-medium">
-            {description}
-          </p>
-        </LargeCard>
-      </Link>
-    </li>
-  );
-}
+// --- Main Dashboard Component ---
+export default function ProfessionalDashboard() {
+  const [summary, setSummary] = useState({
+    clientCount: 0,
+    itemCount: 0,
+    invoiceCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-/**
- * Dashboard: only two big cards, centered in the viewport.
- */
-export default function Dashboard() {
-  const cards = [
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await Axios.get("/dashboard/summary");
+        setSummary(res.data);
+      } catch (error) {
+        console.error("Error fetching dashboard summary:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
+
+  const cardsData = [
     {
       title: "Invoices",
-      icon: <FileText size={48} aria-hidden="true" focusable={false} />,
+      icon: <FileText size={24} aria-hidden="true" />,
       to: "/invoices",
-      description: "View and manage all your invoices",
+      description: "Total active invoices",
+      stat: summary.invoiceCount,
+    },
+    {
+      title: "Customers",
+      icon: <Users size={24} aria-hidden="true" />,
+      to: "/customers",
+      description: "Total registered customers",
+      stat: summary.clientCount,
     },
     {
       title: "Items",
-      icon: <Box size={48} aria-hidden="true" focusable={false} />,
+      icon: <Box size={24} aria-hidden="true" />,
       to: "/items",
-      description: "Manage inventory and billable items",
+      description: "Items in inventory",
+      stat: summary.itemCount,
     },
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-gray-50 to-white flex items-center justify-center">
-      <nav
-        aria-label="Dashboard main links"
-        className="w-full max-w-5xl px-4 sm:px-8"
-      >
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 w-full items-center">
-          {cards.map((card) => (
-            <BigStatCard key={card.title} {...card} />
+    <div className="flex h-screen bg-slate-50">
+      <main className="flex-1 overflow-y-auto p-8 sm:p-12">
+        <Header />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cardsData.map((card) => (
+            <StatCard key={card.title} {...card} loading={loading} />
           ))}
-        </ul>
-      </nav>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }

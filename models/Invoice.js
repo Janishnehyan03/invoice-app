@@ -31,10 +31,10 @@ const invoiceSchema = new mongoose.Schema(
       },
     },
 
-    to: {
-      type: String,
+   client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Client",
       required: true,
-      trim: true,
     },
     workName: { type: String, required: true, trim: true },
     workCode: { type: String, required: true, trim: true },

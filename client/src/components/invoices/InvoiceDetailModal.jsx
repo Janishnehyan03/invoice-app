@@ -176,6 +176,13 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         }
         .no-print-bg { background: white !important; }
         .print-hidden { display: none !important; }
+        /* Increase logo size in print */
+        img[alt="Company Logo"].print-logo,
+        img[alt="Company Logo"] {
+          height: 80px !important;
+          width: auto !important;
+          max-width: 100% !important;
+        }
       }
     `;
     const fullPrintStyles = `<style>${stylesheets}\n${printTableStyle}</style>`;
@@ -222,7 +229,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               <img
                 src="/SHELTER-LOGO.png"
                 alt="Company Logo"
-                className="h-16 w-auto object-contain flex-shrink-0 mt-1 print:h-12"
+                className="h-32 w-auto object-contain flex-shrink-0 mt-1 print:h-12"
               />
             )}
             <div className="flex flex-col">
@@ -232,17 +239,20 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               <span className="text-gray-600 text-sm mt-2 leading-relaxed max-w-sm">
                 {invoice.from?.fromAddress || "Company Address"}
               </span>
-              <span className="text-gray-500 text-xs mt-2 font-medium">
-                {invoice.from?.fromGSTIN && "GSTIN:"}{" "}
-                {invoice.from?.fromGSTIN || " "}
-              </span>
+              {invoice.from?.fromGSTIN && invoice.from.fromGSTIN.trim() !== "_" && (
+                <span className="text-gray-500 text-xs mt-2 font-medium">
+                  GSTIN: {invoice.from.fromGSTIN}
+                </span>
+              )}
             </div>
           </div>
 
           <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-100 min-w-[300px] print:shadow-none print:border">
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <span className="font-semibold text-slate-600">Billed To:</span>
-              <span className="text-slate-900 font-medium">{invoice.to}</span>
+              <span className="text-slate-900 font-medium">
+                {invoice.client.name}
+              </span>
               <span className="font-semibold text-slate-600">Work Name :</span>
               <span className="text-slate-900 font-medium">
                 {invoice.workName}

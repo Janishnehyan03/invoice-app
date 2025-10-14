@@ -7,6 +7,9 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Invoices from "./pages/Invoices";
 import Items from "./pages/Items";
+import NotFound from "./pages/NotFound";
+import Customers from "./pages/Customers";
+import CustomerDetails from "./pages/CustomerDetails";
 
 function App() {
   return (
@@ -41,11 +44,26 @@ function App() {
               </MainLayout>
             }
           />
-         
+          <Route
+            path="/customers"
+            element={
+              <MainLayout>
+                <Customers />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/customers/:id"
+            element={
+              <MainLayout>
+                <CustomerDetails />
+              </MainLayout>
+            }
+          />
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Login />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

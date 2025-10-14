@@ -44,6 +44,7 @@ function calcLine({ qty, price, gstPercent }) {
 // list invoices JSON
 router.get("/", async (req, res) => {
   const invoices = await Invoice.find()
+    .populate("client")
     .sort({ createdAt: -1 })
     .populate("items.item")
     .lean();
@@ -53,12 +54,13 @@ router.get("/", async (req, res) => {
 // create invoice
 router.post("/", async (req, res) => {
   try {
-    const { to, workName, date, items, notes, total, from, workCode } = req.body;
+    const { client, workName, date, items, notes, total, from, workCode } =
+      req.body;
     const invoiceNumber = "IN-" + new Date().getTime(); // Generate a unique invoice number
 
     const invoice = await Invoice.create({
       invoiceNumber,
-      to,
+      client,
       workName,
       workCode,
       date,
@@ -80,6 +82,7 @@ router.get("/:id", async (req, res) => {
   try {
     const inv = await Invoice.findById(req.params.id)
       .populate("lines.item")
+      .populate("client")
       .lean();
     if (!inv) return res.status(404).json({ error: "Not found" });
     res.json(inv);
@@ -91,11 +94,11 @@ router.get("/:id", async (req, res) => {
 // update invoice
 router.put("/:id", async (req, res) => {
   try {
-    const { workName, to, from, date, total, items, notes } = req.body;
+    const { workName, client, from, date, total, items, notes } = req.body;
 
     const update = {
       workName,
-      to,
+      client,
       from,
       date,
       total,
