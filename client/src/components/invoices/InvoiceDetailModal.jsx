@@ -251,7 +251,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <span className="font-semibold text-slate-600">Billed To:</span>
               <span className="text-slate-900 font-medium">
-                {invoice.client.name}
+                {invoice.client?.name}
               </span>
               <span className="font-semibold text-slate-600">Work Name :</span>
               <span className="text-slate-900 font-medium">
