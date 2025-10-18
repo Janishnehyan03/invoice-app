@@ -36,8 +36,8 @@ function Sidebar() {
         <div className="p-2 bg-indigo-600 rounded-lg">
           <LayoutDashboard size={24} />
         </div>
-        <h1 className="text-xl font-bold">MyCorp Inc.</h1>
-      </div>
+        <h1 className="text-xl font-bold">Invoice Maker</h1>
+      </div>  
       <nav>
         <ul className="space-y-2">
           <NavLink to="/" icon={<LayoutDashboard size={20} />}>

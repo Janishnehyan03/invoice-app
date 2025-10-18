@@ -42,7 +42,7 @@ export function InvoiceItemsTable({
             const itemSubtotal = (it.price || 0) * (it.qty || 0);
             const itemSgstValue = itemSubtotal * ((it.sgst || 0) / 100);
             const itemCgstValue = itemSubtotal * ((it.cgst || 0) / 100);
-            const itemTotal = itemSubtotal + itemSgstValue + itemCgstValue;
+            const itemTotal = itemSubtotal ;
             const isExistingItem = isEditMode && it.uploaded;
             return (
               <div

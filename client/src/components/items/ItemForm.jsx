@@ -49,7 +49,7 @@ function ItemForm({ itemToEdit, onFormSubmit, onCancel }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">Base Price (₹)</label>
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price (₹)</label>
           <input
             type="number"
             name="price"

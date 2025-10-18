@@ -58,6 +58,7 @@ router.post("/", async (req, res) => {
       req.body;
     const invoiceNumber = "IN-" + new Date().getTime(); // Generate a unique invoice number
 
+
     const invoice = await Invoice.create({
       invoiceNumber,
       client,

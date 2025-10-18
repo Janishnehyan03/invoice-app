@@ -20,7 +20,6 @@ const TableRow = ({ item, onEdit, onDelete }) => {
   // CORRECTED LOGIC: Total price is base price + taxes
   const sgstAmount = (item.price * item.sgst) / 100;
   const cgstAmount = (item.price * item.cgst) / 100;
-  const totalPrice = item.price + sgstAmount + cgstAmount;
 
   return (
     <tr className="hover:bg-gray-50 transition-colors group">
@@ -36,9 +35,7 @@ const TableRow = ({ item, onEdit, onDelete }) => {
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-right">
         {item.cgst}%
       </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right font-semibold font-mono">
-        {formatCurrency(totalPrice)}
-      </td>
+  
       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -106,7 +103,7 @@ const EmptyState = ({ colSpan, searchTerm }) => (
 
 function ItemsTable({ items, isLoading, onEdit, onDelete }) {
   const [search, setSearch] = useState("");
-  const tableHeaders = ["Item Name", "Base Price", "SGST", "CGST", "Total Price", ""];
+  const tableHeaders = ["Item Name", "Price", "SGST", "CGST",  "Actions"];
 
   const filteredItems = useMemo(() => {
     const term = search.trim().toLowerCase();

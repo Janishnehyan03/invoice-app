@@ -2,10 +2,15 @@ import { useRef } from "react";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 
-// --- Utility Functions ---
+// --- Utility Helpers ---
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
 // Simple amount-in-words utility for INR
 function amountInWords(num) {
+  num = Number(num) || 0;
   if (typeof num !== "number" || isNaN(num)) return "";
   if (num === 0) return "Zero Rupees Only";
   const a = [
@@ -58,47 +63,73 @@ function amountInWords(num) {
   if (n > 100 && n % 100) out += "and ";
   out += numToWords(n % 100, "");
   out = out.replace(/\s+/g, " ").trim();
-  let paise = Math.round((num - n) * 100);
+  let paise = Math.round((Math.abs(num) - Math.floor(Math.abs(num))) * 100);
   let words = out + " Rupees";
-  if (paise) words += " and " + numToWords(paise, "") + " Paise";
+  if (paise) {
+    // convert paise number to words (max 99)
+    let paiseWords = "";
+    if (paise > 19)
+      paiseWords =
+        b[Math.floor(paise / 10)] + (paise % 10 ? " " + a[paise % 10] : "");
+    else paiseWords = a[paise];
+    words += " and " + paiseWords + " Paise";
+  }
   return words + " Only";
 }
 
 const formatCurrency = (amount) => {
-  if (typeof amount !== "number" || isNaN(amount)) return "₹0.00";
-  return `₹${amount.toLocaleString("en-IN", {
+  const n = safeNumber(amount);
+  return `₹${n.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 };
 
+// --- Calculation logic ---
+// FIX: Apply rounding at the line-item level, identical to the table body,
+// to prevent rounding discrepancies between the line items and the summary footer.
 function calculateTotals(items = []) {
-  const totals = items.reduce(
-    (acc, row) => {
-      const qty = row.qty || 0;
-      const sgstRate = row.sgst || 0;
-      const cgstRate = row.cgst || 0;
-      const rate = row.item?.price
-        ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
-        : 0;
-      const lineSubtotal = qty * rate;
+  // GST is display-only. Grand total = sum of (rate * qty) only.
+  const acc = items.reduce(
+    (accum, row) => {
+      const qty = safeNumber(row.qty);
+      const sgstRate = safeNumber(row.sgst ?? row.item?.sgst);
+      const cgstRate = safeNumber(row.cgst ?? row.item?.cgst);
+      const unitPrice = safeNumber(row.item?.price);
 
-      acc.subtotal += lineSubtotal;
-      acc.totalSGST += (lineSubtotal * sgstRate) / 100;
-      acc.totalCGST += (lineSubtotal * cgstRate) / 100;
+      // line amounts based only on rate * qty
+      const lineSubtotal = Math.round(unitPrice * qty * 100) / 100;
 
-      return acc;
+      // GST calculated from the same rate*qty but kept for display only
+      const lineSGST =
+        Math.round(((unitPrice * qty * sgstRate) / 100) * 100) / 100;
+      const lineCGST =
+        Math.round(((unitPrice * qty * cgstRate) / 100) * 100) / 100;
+
+      accum.subtotal += lineSubtotal;
+      accum.totalSGST += lineSGST;
+      accum.totalCGST += lineCGST;
+
+      return accum;
     },
     { subtotal: 0, totalSGST: 0, totalCGST: 0 }
   );
 
-  const grandTotal = totals.subtotal + totals.totalSGST + totals.totalCGST;
-  return { ...totals, grandTotal };
+  const subtotal = Math.round(acc.subtotal * 100) / 100;
+  const totalSGST = Math.round(acc.totalSGST * 100) / 100;
+  const totalCGST = Math.round(acc.totalCGST * 100) / 100;
+
+  // Grand total does NOT include GST here (GST is display-only)
+
+  return {
+    subtotal,
+    totalSGST,
+    totalCGST,
+  };
 }
-
-// --- The Component ---
-
+// --- Component ---
 export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
+  console.log("InvoiceDetailModal invoice:", invoice);
   const printRef = useRef(null);
 
   if (!invoice) return null;
@@ -106,9 +137,9 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
   const formatDate = (dateString) =>
     dateString ? new Date(dateString).toLocaleDateString("en-GB") : "N/A";
 
-  const { subtotal, totalSGST, totalCGST, grandTotal } = calculateTotals(
-    invoice.items
-  );
+  const items = Array.isArray(invoice.items) ? invoice.items : [];
+
+  const { subtotal, totalSGST, totalCGST } = calculateTotals(items);
 
   const handlePrint = () => {
     if (!printRef.current) return;
@@ -176,7 +207,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         }
         .no-print-bg { background: white !important; }
         .print-hidden { display: none !important; }
-        /* Increase logo size in print */
         img[alt="Company Logo"].print-logo,
         img[alt="Company Logo"] {
           height: 80px !important;
@@ -190,7 +220,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Invoice #${invoice.invoiceNumber}</title>
+          <title>Invoice #${invoice.invoiceNumber || ""}</title>
           ${fullPrintStyles}
         </head>
         <body onload="window.print(); setTimeout(window.close, 100);">
@@ -209,7 +239,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
         <span className="flex items-center gap-2">
           <span className="font-bold text-indigo-700">Invoice</span>
           <span className="text-gray-400 font-medium">
-            #{invoice.invoiceNumber}
+            #{invoice.invoiceNumber || "N/A"}
           </span>
         </span>
       }
@@ -239,11 +269,12 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
               <span className="text-gray-600 text-sm mt-2 leading-relaxed max-w-sm">
                 {invoice.from?.fromAddress || "Company Address"}
               </span>
-              {invoice.from?.fromGSTIN && invoice.from.fromGSTIN.trim() !== "_" && (
-                <span className="text-gray-500 text-xs mt-2 font-medium">
-                  GSTIN: {invoice.from.fromGSTIN}
-                </span>
-              )}
+              {invoice.from?.fromGSTIN &&
+                invoice.from.fromGSTIN.trim() !== "_" && (
+                  <span className="text-gray-500 text-xs mt-2 font-medium">
+                    GSTIN: {invoice.from.fromGSTIN}
+                  </span>
+                )}
             </div>
           </div>
 
@@ -251,19 +282,19 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <span className="font-semibold text-slate-600">Billed To:</span>
               <span className="text-slate-900 font-medium">
-                {invoice.client?.name}
+                {invoice.client?.name || "Client"}
               </span>
               <span className="font-semibold text-slate-600">Work Name :</span>
               <span className="text-slate-900 font-medium">
-                {invoice.workName}
+                {invoice.workName || "-"}
               </span>
               <span className="font-semibold text-slate-600">Work Code :</span>
               <span className="text-slate-900 font-medium">
-                {invoice?.workCode}
+                {invoice?.workCode || "-"}
               </span>
               <span className="font-semibold text-slate-600">Invoice No:</span>
               <span className="text-slate-900 font-medium">
-                {invoice.invoiceNumber}
+                {invoice.invoiceNumber || "-"}
               </span>
               <span className="font-semibold text-slate-600">
                 Invoice Date:
@@ -297,26 +328,27 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                   </th>
                   <th className="px-4 py-4 font-bold text-right w-24">SGST</th>
                   <th className="px-4 py-4 font-bold text-right w-24">CGST</th>
-                  <th className="px-4 py-4 font-bold text-right w-32">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {invoice.items.map((row, index) => {
-                  const qty = row.qty || 0;
-                  const sgstRate = row.sgst || 0;
-                  const cgstRate = row.cgst || 0;
-                  const rate = row.item?.price
-                    ? row.item.price / (1 + (sgstRate + cgstRate) / 100)
-                    : 0;
+                {items.map((row, index) => {
+                  const qty = safeNumber(row.qty);
+                  const sgstRate = safeNumber(row.sgst ?? row.item?.sgst);
+                  const cgstRate = safeNumber(row.cgst ?? row.item?.cgst);
+                  const unitPrice = safeNumber(row.item?.price);
 
-                  const lineSubtotal = qty * rate;
-                  const lineSGST = (lineSubtotal * sgstRate) / 100;
-                  const lineCGST = (lineSubtotal * cgstRate) / 100;
-                  const lineTotalAmount = lineSubtotal + lineSGST + lineCGST;
+                  const lineSubtotal = Math.round(unitPrice * qty * 100) / 100;
+                  const lineSGST =
+                    Math.round(((lineSubtotal * sgstRate) / 100) * 100) / 100;
+                  const lineCGST =
+                    Math.round(((lineSubtotal * cgstRate) / 100) * 100) / 100;
+                  const lineTotalAmount =
+                    Math.round((lineSubtotal + lineSGST + lineCGST) * 100) /
+                    100;
 
                   return (
                     <tr
-                      key={index}
+                      key={row._id || index}
                       className="hover:bg-slate-25 print:hover:bg-transparent"
                     >
                       <td className="px-4 py-4 text-center font-medium text-slate-600">
@@ -329,19 +361,24 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                         {qty}
                       </td>
                       <td className="px-4 py-4 text-right text-slate-700">
-                        {formatCurrency(rate)}
+                        {/* Show the exact unit price as stored (tax exclusive) */}
+                        {formatCurrency(unitPrice)}
                       </td>
                       <td className="px-4 py-4 text-right font-medium text-slate-800">
                         {formatCurrency(lineSubtotal)}
                       </td>
                       <td className="px-4 py-4 text-right text-slate-600">
-                        {formatCurrency(lineSGST)}
+                        {/* show both rate% and amount */}
+                        <div className="text-xs text-slate-500">
+                          {sgstRate}%
+                        </div>
+                        <div>{formatCurrency(lineSGST)}</div>
                       </td>
                       <td className="px-4 py-4 text-right text-slate-600">
-                        {formatCurrency(lineCGST)}
-                      </td>
-                      <td className="px-4 py-4 text-right font-bold text-indigo-700">
-                        {formatCurrency(lineTotalAmount)}
+                        <div className="text-xs text-slate-500">
+                          {cgstRate}%
+                        </div>
+                        <div>{formatCurrency(lineCGST)}</div>
                       </td>
                     </tr>
                   );
@@ -363,9 +400,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                   </td>
                   <td className="px-4 py-4 text-right font-bold text-slate-800">
                     {formatCurrency(totalCGST)}
-                  </td>
-                  <td className="px-4 py-4 text-right font-bold text-xl text-indigo-700">
-                    {formatCurrency(grandTotal)}
                   </td>
                 </tr>
               </tfoot>
@@ -390,7 +424,7 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                     <span className="text-slate-600 font-medium">
                       Amount in Words:{" "}
                     </span>
-                    {amountInWords(grandTotal)}
+                    {amountInWords(subtotal)}
                   </p>
                 </div>
               </div>
@@ -405,12 +439,6 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-600">Subtotal:</span>
-                    <span className="font-medium text-slate-800">
-                      {formatCurrency(subtotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
                     <span className="text-slate-600">Total SGST:</span>
                     <span className="font-medium text-slate-800">
                       {formatCurrency(totalSGST)}
@@ -422,15 +450,11 @@ export function InvoiceDetailModal({ isOpen, onClose, invoice }) {
                       {formatCurrency(totalCGST)}
                     </span>
                   </div>
-                  <div className="border-t border-slate-200 pt-2 mt-3">
-                    <div className="flex justify-between items-center py-1">
-                      <span className="font-bold text-slate-800">
-                        Grand Total:
-                      </span>
-                      <span className="font-bold text-lg text-indigo-700">
-                        {formatCurrency(grandTotal)}
-                      </span>
-                    </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-slate-600">Subtotal:</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(subtotal)}
+                    </span>
                   </div>
                 </div>
               </div>
