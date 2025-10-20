@@ -14,6 +14,12 @@ const formatCurrency = (amount) =>
     currency: "INR",
   }).format(amount);
 
+// small safe number helper
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const companies = [
   {
     name: "Aneesh kandoth kandiyil",
@@ -168,22 +174,48 @@ export function InvoiceForm({
   }, [company]);
 
   // --- CALCULATIONS ---
+  // Updated to match InvoiceDetailModal behavior:
+  // - Apply rounding at the line-item level (rate * qty)
+  // - Compute sgst/cgst for display only (calculated from line subtotal)
+  // - Grand total DOES NOT include taxes; grandTotal = subtotal
   const { subtotal, totalSgst, totalCgst, grandTotal } = useMemo(() => {
-    return invoiceItems.reduce(
-      (acc, item) => {
-        const itemSubtotal = (item.price || 0) * (item.qty || 0);
-        const itemSgst = itemSubtotal * ((item.sgst || 0) / 100);
-        const itemCgst = itemSubtotal * ((item.cgst || 0) / 100);
+    const acc = invoiceItems.reduce(
+      (accum, item) => {
+        const qty = safeNumber(item.qty);
+        const unitPrice = safeNumber(item.price);
+        const sgstRate = safeNumber(item.sgst);
+        const cgstRate = safeNumber(item.cgst);
 
-        acc.subtotal += itemSubtotal;
-        acc.totalSgst += itemSgst;
-        acc.totalCgst += itemCgst;
-        acc.grandTotal += itemSubtotal + itemSgst + itemCgst;
+        // Round line subtotal to 2 decimals (same as table row)
+        const lineSubtotal = Math.round(unitPrice * qty * 100) / 100;
 
-        return acc;
+        // GST values derived from the rounded line subtotal and also rounded
+        const lineSgst =
+          Math.round(((lineSubtotal * sgstRate) / 100) * 100) / 100;
+        const lineCgst =
+          Math.round(((lineSubtotal * cgstRate) / 100) * 100) / 100;
+
+        accum.subtotal += lineSubtotal;
+        accum.totalSgst += lineSgst;
+        accum.totalCgst += lineCgst;
+
+        return accum;
       },
-      { subtotal: 0, totalSgst: 0, totalCgst: 0, grandTotal: 0 }
+      { subtotal: 0, totalSgst: 0, totalCgst: 0 }
     );
+
+    // Final rounding of accumulators
+    const roundedSubtotal = Math.round(acc.subtotal * 100) / 100;
+    const roundedSgst = Math.round(acc.totalSgst * 100) / 100;
+    const roundedCgst = Math.round(acc.totalCgst * 100) / 100;
+
+    // IMPORTANT: Grand total does NOT include GST here (display-only)
+    return {
+      subtotal: roundedSubtotal,
+      totalSgst: roundedSgst,
+      totalCgst: roundedCgst,
+      grandTotal: roundedSubtotal,
+    };
   }, [invoiceItems]);
 
   // --- FIX: Correctly handle adding a new client ---
@@ -262,13 +294,14 @@ export function InvoiceForm({
     }
     setIsSubmitting(true);
     const filteredInvoiceItems = invoiceItems.filter((it) => it.itemId);
+    // Send total as subtotal (tax exclusive) to match the invoice modal behavior
     const payload = {
       workName,
       workCode,
       client,
       from,
       date,
-      total: grandTotal,
+      total: subtotal,
       items: filteredInvoiceItems
         .map((it) => ({
           item: it.itemId,
