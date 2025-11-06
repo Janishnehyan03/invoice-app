@@ -341,30 +341,38 @@ export function InvoiceForm({
 
   // --- RENDER ---
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 mx-auto border border-gray-100">
+    <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-lg p-10 mx-auto border border-gray-100/80 max-w-5xl">
       <form onSubmit={handleSubmit} className="space-y-10">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b pb-6 border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 border-b border-gray-200/80 pb-6">
           <div>
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              {isEditMode ? "Edit Invoice" : "Create Invoice"}
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                {isEditMode ? "Edit Invoice" : "Create Invoice"}
+              </span>
             </h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500">
               {isEditMode
-                ? "Modify the details of your invoice below."
-                : "Fill out the form to generate a new invoice."}
+                ? "Modify the details of your existing invoice."
+                : "Fill in the form below to generate a new invoice with ease."}
             </p>
           </div>
-          <Input
-            id="date"
-            label="Invoice Date"
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-44"
-          />
+
+          <div className="min-w-[11rem]">
+            <label className="text-xs font-medium text-gray-500 block mb-1">
+              Invoice Date
+            </label>
+            <Input
+              id="date"
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+          </div>
         </div>
+
         {/* Client Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
@@ -378,7 +386,7 @@ export function InvoiceForm({
               );
               setCompany(selectedCompany);
             }}
-            className="bg-gray-50"
+            className="bg-gray-50/80 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           >
             <option value="" disabled>
               Select your company...
@@ -389,6 +397,7 @@ export function InvoiceForm({
               </option>
             ))}
           </Select>
+
           <ClientSearch
             allClients={allClients}
             clientSearchQuery={clientSearchQuery}
@@ -400,6 +409,7 @@ export function InvoiceForm({
             isEditMode={isEditMode}
             onAddClient={handleAddNewClient}
           />
+
           <Input
             id="workName"
             label="Work Name"
@@ -408,8 +418,9 @@ export function InvoiceForm({
             value={workName}
             onChange={(e) => setWorkName(e.target.value)}
             placeholder="e.g., Website Redesign"
-            className="bg-gray-50"
+            className="bg-gray-50/80 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
+
           <Input
             id="workCode"
             label="Work Code"
@@ -418,9 +429,11 @@ export function InvoiceForm({
             value={workCode}
             onChange={(e) => setWorkCode(e.target.value)}
             placeholder="e.g., WEB-001"
-            className="bg-gray-50"
+            className="bg-gray-50/80 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
+
+        {/* Items Table */}
         <InvoiceItemsTable
           invoiceItems={invoiceItems}
           availableItems={availableItems}
@@ -432,18 +445,21 @@ export function InvoiceForm({
           onRemoveItem={removeItem}
           formatCurrency={formatCurrency}
         />
-        <div className="flex flex-col md:flex-row md:items-start gap-8">
+
+        {/* Notes + Totals */}
+        <div className="flex flex-col md:flex-row md:items-start gap-10">
           <div className="flex-1">
             <Textarea
               id="notes"
-              label="Notes"
+              label="Additional Notes"
               rows={4}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes or payment terms..."
-              className="bg-gray-50"
+              placeholder="Add optional notes, terms, or remarks..."
+              className="bg-gray-50/80 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
+
           <div className="flex-1 max-w-xs ml-auto">
             <TotalsBox
               subtotal={subtotal}
@@ -454,20 +470,23 @@ export function InvoiceForm({
             />
           </div>
         </div>
+
+        {/* Footer Buttons */}
         <div className="flex justify-end gap-4 pt-8 border-t border-gray-100">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="text-gray-600 hover:bg-gray-100"
+            className="text-gray-600 hover:bg-gray-100 rounded-xl px-5 py-2.5 font-medium transition"
           >
             Cancel
           </Button>
+
           <Button
             type="submit"
             variant="primary"
             disabled={isSubmitting || isLoadingItems}
-            className="font-semibold px-6 py-2"
+            className="px-6 py-2.5 font-semibold rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white shadow hover:shadow-md active:scale-[0.98] transition-all"
           >
             {isSubmitting
               ? isEditMode
